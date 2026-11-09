@@ -1,0 +1,19 @@
+.idea/vcs.xml
+  s_a8a3c2c24bdbe5::t_8e12df53cbc003 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "b9dc07dfbeece1ce8869e19cdb1df973805807bb",
+  "prompts": {},
+  "sessions": {
+    "s_a8a3c2c24bdbe5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ac7c1adf-44f1-4f16-bea0-b6c8350561fa",
+        "model": "default"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
