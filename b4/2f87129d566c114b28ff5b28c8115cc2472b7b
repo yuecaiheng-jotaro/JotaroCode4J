@@ -1,0 +1,205 @@
+README.md
+  s_a06df77ee2692f::t_6e746e5340b3f9 1-115
+src/main/java/org/jotaro/jotarocode/controller/SseController.java
+  s_a06df77ee2692f::t_d57887947180bb 12-14
+src/main/java/org/jotaro/jotarocode/agent/tools/package-info.java
+  s_a06df77ee2692f::t_0c2027dd2365b0 1-9
+src/main/java/org/jotaro/jotarocode/model/common/ApiResponse.java
+  s_a06df77ee2692f::t_1f77672523ef3b 7-10
+src/main/java/org/jotaro/jotarocode/agent/runtime/StopReason.java
+  s_a06df77ee2692f::t_8f25dc78a845fd 3-6
+src/test/java/org/jotaro/jotarocode/agent/PiAgentTest.java
+  s_a06df77ee2692f::t_8abf3f0f8633b9 20
+src/main/java/org/jotaro/jotarocode/service/AgentSessionService.java
+  s_a06df77ee2692f::t_dcb34390c0bf7d 10-13
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/WriteTool.java
+  s_a06df77ee2692f::t_c887335010f1f0 13
+src/main/java/org/jotaro/jotarocode/model/response/package-info.java
+  s_a06df77ee2692f::t_e3243de18cd7c2 1-2
+pom.xml
+  s_a06df77ee2692f::t_8e45a63bb87992 16-18,20
+  s_a06df77ee2692f::t_8f2017d98c3ea6 19
+src/main/java/org/jotaro/jotarocode/tui/package-info.java
+  s_a06df77ee2692f::t_c3f9b1d9f567d8 1-5
+src/main/java/org/jotaro/jotarocode/model/request/PromptRequest.java
+  s_a06df77ee2692f::t_028b4e2bc841ca 5
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoop.java
+  s_a06df77ee2692f::t_8e37d8af417f76 36,40,43
+  s_a06df77ee2692f::t_aa12ce9de521df 121
+  s_a06df77ee2692f::t_92219bd2bb8497 207
+  s_a06df77ee2692f::t_1fa23916cbecd6 256
+  s_a06df77ee2692f::t_23383b8fa18154 177-180
+src/main/java/org/jotaro/jotarocode/agent/AgentState.java
+  s_a06df77ee2692f::t_0204770506c0b3 3
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/FindTool.java
+  s_a06df77ee2692f::t_c9526509190617 18
+src/main/java/org/jotaro/jotarocode/config/AsyncConfig.java
+  s_a06df77ee2692f::t_8789ff09b541b5 10-13
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/FileMutationLock.java
+  s_a06df77ee2692f::t_5be4efa65e649a 5-8
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentEventType.java
+  s_a06df77ee2692f::t_0dc8ce1ab8a37a 4-5
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/GrepTool.java
+  s_a06df77ee2692f::t_b4f88aec82bff8 20-23
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentEvent.java
+  s_a06df77ee2692f::t_d45b3b1ad588b8 10-13
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ShellRunner.java
+  s_a06df77ee2692f::t_e9117d5d741f59 11-13
+src/main/java/org/jotaro/jotarocode/service/impl/ToolFacadeServiceImpl.java
+  s_a06df77ee2692f::t_2edbea38e83d11 11
+src/main/java/org/jotaro/jotarocode/config/MultiChatClientConfig.java
+  s_a06df77ee2692f::t_d3af244207e894 9-12
+src/main/java/org/jotaro/jotarocode/event/package-info.java
+  s_a06df77ee2692f::t_df6b60afe6e217 1-5
+src/main/java/org/jotaro/jotarocode/model/package-info.java
+  s_a06df77ee2692f::t_0300a21c1599e3 1-7
+src/main/java/org/jotaro/jotarocode/agent/tools/Tool.java
+  s_a06df77ee2692f::t_34bb2fd48c8a17 3-5
+src/main/java/org/jotaro/jotarocode/config/PiAgentProperties.java
+  s_a06df77ee2692f::t_30d796de443360 6-9
+src/main/java/org/jotaro/jotarocode/model/request/QueueRequest.java
+  s_a06df77ee2692f::t_2f61a37a00265d 5-8
+src/main/java/org/jotaro/jotarocode/agent/runtime/BeforeToolCallResult.java
+  s_a06df77ee2692f::t_9194a614db7dea 6
+src/main/java/org/jotaro/jotarocode/agent/package-info.java
+  s_a06df77ee2692f::t_7113306ea75168 1-8
+src/main/java/org/jotaro/jotarocode/skill/Skill.java
+  s_a06df77ee2692f::t_3b75cc6a606654 5-8
+src/main/java/org/jotaro/jotarocode/agent/tools/ToolType.java
+  s_a06df77ee2692f::t_55ed2d39b62633 3
+src/main/java/org/jotaro/jotarocode/agent/runtime/package-info.java
+  s_a06df77ee2692f::t_5c0bbad919857a 1-9
+src/main/java/org/jotaro/jotarocode/service/impl/AgentSessionServiceImpl.java
+  s_a06df77ee2692f::t_9b490e4ad847ca 30-33
+src/main/java/org/jotaro/jotarocode/service/ToolFacadeService.java
+  s_a06df77ee2692f::t_ff86e4c4868983 7
+src/main/java/org/jotaro/jotarocode/agent/runtime/AssistantTurn.java
+  s_a06df77ee2692f::t_c4139e0dbc58b7 6
+src/main/java/org/jotaro/jotarocode/model/response/SkillView.java
+  s_a06df77ee2692f::t_a70df94d6d3b80 6-9
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/package-info.java
+  s_a06df77ee2692f::t_85086c0cb43f19 1-9
+src/main/java/org/jotaro/jotarocode/agent/runtime/AfterToolCallResult.java
+  s_a06df77ee2692f::t_c4c399c2286d0e 6
+src/main/java/org/jotaro/jotarocode/skill/SkillCatalog.java
+  s_a06df77ee2692f::t_a3d1bdc3729c20 111-114
+  s_a06df77ee2692f::t_3a3c016daf81b9 19-23
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/BashTool.java
+  s_a06df77ee2692f::t_fffca3569871e1 12
+src/main/java/org/jotaro/jotarocode/event/PromptEvent.java
+  s_a06df77ee2692f::t_1222a8fd126b41 6-9
+src/main/java/org/jotaro/jotarocode/model/dto/AgentEventView.java
+  s_a06df77ee2692f::t_fc16b44116f735 6-10
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/LsTool.java
+  s_a06df77ee2692f::t_2056301d31bdb6 17
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ReadTool.java
+  s_a06df77ee2692f::t_45b5b4d80ecff4 18-21
+src/main/java/org/jotaro/jotarocode/skill/package-info.java
+  s_a06df77ee2692f::t_f5a078ef76d11e 1-8
+src/main/java/org/jotaro/jotarocode/service/impl/SseServiceImpl.java
+  s_a06df77ee2692f::t_5b0f3f02d75ec4 15-18
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_a06df77ee2692f::t_697cf25cddbece 19-20
+src/main/resources/static/index.html
+  s_a06df77ee2692f::t_63a81de492bf0c 2-10
+src/main/java/org/jotaro/jotarocode/config/package-info.java
+  s_a06df77ee2692f::t_daa93dc6dddf80 1-9
+src/main/java/org/jotaro/jotarocode/config/ChatClientRegistry.java
+  s_a06df77ee2692f::t_acd2a7345d5b47 9
+src/main/java/org/jotaro/jotarocode/agent/tools/ClockTool.java
+  s_a06df77ee2692f::t_455b062b2e5b66 7
+src/test/java/org/jotaro/jotarocode/agent/runtime/AgentLoopTest.java
+  s_a06df77ee2692f::t_5e6f509d916cbe 22
+src/main/java/org/jotaro/jotarocode/model/response/CreateSessionResponse.java
+  s_a06df77ee2692f::t_337b4bad2470d4 6
+src/main/java/org/jotaro/jotarocode/agent/tools/TerminateTool.java
+  s_a06df77ee2692f::t_7424ad6ceb1739 5-7
+src/test/java/org/jotaro/jotarocode/agent/runtime/StreamChunkAggregatorTest.java
+  s_a06df77ee2692f::t_fd8bc66563288b 9
+src/main/java/org/jotaro/jotarocode/model/dto/package-info.java
+  s_a06df77ee2692f::t_4f77c5719d82bd 1-5
+src/test/java/org/jotaro/jotarocode/PiAgentApplicationTest.java
+  s_a06df77ee2692f::t_df9fa7b729a914 7
+src/main/java/org/jotaro/jotarocode/model/request/package-info.java
+  s_a06df77ee2692f::t_79740a9104fc69 1-2
+src/test/java/org/jotaro/jotarocode/skill/SkillCatalogTest.java
+  s_a06df77ee2692f::t_e665d2a6124110 14
+src/main/resources/application.yaml
+  s_a06df77ee2692f::t_92e2b473ea08a2 1-2,7,14,23-24,27,29,31
+src/main/java/org/jotaro/jotarocode/exception/GlobalExceptionHandler.java
+  s_a06df77ee2692f::t_62e5b75635e622 10-13
+src/main/java/org/jotaro/jotarocode/agent/runtime/CallbackAgentTool.java
+  s_a06df77ee2692f::t_e98c3546125397 5
+src/main/java/org/jotaro/jotarocode/event/listener/package-info.java
+  s_a06df77ee2692f::t_bfdc91a0de8a2a 1-2
+src/main/java/org/jotaro/jotarocode/exception/package-info.java
+  s_a06df77ee2692f::t_74d0a0fe43d3f5 1-6
+src/main/java/org/jotaro/jotarocode/agent/PiAgentFactory.java
+  s_a06df77ee2692f::t_bf12f984e4a545 22-25
+  s_a06df77ee2692f::t_33daf6fcfb4ea6 65-68
+src/main/java/org/jotaro/jotarocode/service/SseService.java
+  s_a06df77ee2692f::t_1a6f835dc99ef0 6
+src/main/java/org/jotaro/jotarocode/service/impl/package-info.java
+  s_a06df77ee2692f::t_245fa246455580 1-4
+src/main/java/org/jotaro/jotarocode/service/package-info.java
+  s_a06df77ee2692f::t_85534c96c4e220 1-8
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/PowerShellTool.java
+  s_a06df77ee2692f::t_f7c954a8a243a0 12-15
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ToolOutput.java
+  s_a06df77ee2692f::t_da946175d77043 8
+src/main/java/org/jotaro/jotarocode/exception/BizException.java
+  s_a06df77ee2692f::t_def63793a40c30 5
+src/main/java/org/jotaro/jotarocode/controller/package-info.java
+  s_a06df77ee2692f::t_8188cafde0e3db 1-8
+src/main/java/org/jotaro/jotarocode/model/request/CreateSessionRequest.java
+  s_a06df77ee2692f::t_d025eede7031cf 5
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/GlobPatterns.java
+  s_a06df77ee2692f::t_6cd887d724038b 6
+src/test/java/org/jotaro/jotarocode/agent/tools/coding/CodingToolsTest.java
+  s_a06df77ee2692f::t_da44f9b671815b 22
+src/main/java/org/jotaro/jotarocode/package-info.java
+  s_a06df77ee2692f::t_4fc738686eb10f 1-12
+src/main/java/org/jotaro/jotarocode/agent/runtime/SpringAiAssistantStreamer.java
+  s_a06df77ee2692f::t_2014e32f984c0e 17-19
+src/main/java/org/jotaro/jotarocode/agent/runtime/StreamChunkAggregator.java
+  s_a06df77ee2692f::t_1a20858005e394 12-13
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTuiRunner.java
+  s_a06df77ee2692f::t_7fec6e843987b3 12-14
+src/main/java/org/jotaro/jotarocode/model/common/package-info.java
+  s_a06df77ee2692f::t_77cff0d0a9af4c 1-5
+src/main/java/org/jotaro/jotarocode/controller/SessionController.java
+  s_a06df77ee2692f::t_23809688602895 22-25
+src/main/java/org/jotaro/jotarocode/model/response/ModelListResponse.java
+  s_a06df77ee2692f::t_45d7ca49d9a9c5 8
+src/main/java/org/jotaro/jotarocode/event/listener/PromptEventListener.java
+  s_a06df77ee2692f::t_d1c0dd3c818f64 11-14
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ToolPaths.java
+  s_a06df77ee2692f::t_0ecad855b45e1a 5
+src/main/java/org/jotaro/jotarocode/agent/PiAgent.java
+  s_a06df77ee2692f::t_fee26b151d41b1 24-28
+  s_a06df77ee2692f::t_010058f4751e08 177
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/EditTool.java
+  s_a06df77ee2692f::t_5782eb13ffc90d 17-20
+src/main/java/org/jotaro/jotarocode/PiAgentApplication.java
+  s_a06df77ee2692f::t_502ce44e7c81c3 11-15
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoopRequest.java
+  s_a06df77ee2692f::t_08f03c8c23b124 12-15
+src/test/java/org/jotaro/jotarocode/tui/AgentEventFormatterTest.java
+  s_a06df77ee2692f::t_5985967cbfde6d 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "b42f87129d566c114b28ff5b28c8115cc2472b7b",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
