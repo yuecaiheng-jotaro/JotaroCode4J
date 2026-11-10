@@ -1,0 +1,46 @@
+src/main/java/org/jotaro/jotarocode/agent/PiAgentFactory.java
+  s_a06df77ee2692f::t_1fdacaa6c5bb43 70-86
+src/main/java/org/jotaro/jotarocode/service/AgentSessionService.java
+  s_a06df77ee2692f::t_cafe75d35426a4 21-24
+  s_a06df77ee2692f::t_e263e394380ac8 25-26
+  s_a06df77ee2692f::t_37c27306901ff9 8-9
+src/main/java/org/jotaro/jotarocode/model/response/ModelListResponse.java
+  s_a06df77ee2692f::t_cdb7aef2057465 1-13
+src/main/resources/static/index.html
+  s_a06df77ee2692f::t_12b764d1cf6f02 208-210
+  s_a06df77ee2692f::t_459b08131bb1a6 178
+  s_a06df77ee2692f::t_5938dbcf78687b 1-177,179-207,211-223,227-358
+  s_a06df77ee2692f::t_f5e6b93c6eee5a 224-226
+src/main/java/org/jotaro/jotarocode/model/response/CreateSessionResponse.java
+  s_a06df77ee2692f::t_c7d17ae109e06a 10
+src/main/java/org/jotaro/jotarocode/service/impl/AgentSessionServiceImpl.java
+  s_a06df77ee2692f::t_511ae74a6f0c25 19-23
+  s_a06df77ee2692f::t_33825fc43cc193 96-99
+  s_a06df77ee2692f::t_b18510293c442c 41,43,46
+  s_a06df77ee2692f::t_435059f0c1070f 131,133,139,142-156
+  s_a06df77ee2692f::t_6898f156b5082f 86-95
+src/main/java/org/jotaro/jotarocode/controller/SessionController.java
+  s_a06df77ee2692f::t_e7d709bb47fb15 34
+  s_a06df77ee2692f::t_106df84626dc80 11
+  s_a06df77ee2692f::t_e36716cb8aea7a 61-66
+  s_a06df77ee2692f::t_c1521f626ffef8 30-33,35-37
+  s_a06df77ee2692f::t_999cd3851709c0 8
+src/main/java/org/jotaro/jotarocode/model/dto/AgentEventView.java
+  s_a06df77ee2692f::t_bd8b16d9599bf5 10,12,18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "3f5dbed278e70dc164c623f167a138779b35ac3e",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
