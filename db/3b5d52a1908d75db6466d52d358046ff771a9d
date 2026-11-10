@@ -1,0 +1,57 @@
+src/main/java/org/jotaro/jotarocode/agent/PiAgentFactory.java
+  s_a06df77ee2692f::t_428f23c9adad2c 43-46
+  s_a06df77ee2692f::t_dabdbb441b083b 12
+  s_a06df77ee2692f::t_b40823a353d218 28
+  s_a06df77ee2692f::t_9833976fce1d25 32-33,37
+src/main/java/org/jotaro/jotarocode/skill/Skill.java
+  s_a06df77ee2692f::t_fef5148d1b2dc6 1-12
+src/main/java/org/jotaro/jotarocode/skill/SkillCatalog.java
+  s_a06df77ee2692f::t_8c30d6148a77c0 15
+  s_a06df77ee2692f::t_a7254fcc67d723 30-37
+  s_a06df77ee2692f::t_ef4d9f2272e686 58
+  s_a06df77ee2692f::t_80d463a126ae39 65
+  s_a06df77ee2692f::t_38cd401442e4d0 1-14,16-29,42-57,59-64,66-247,249-265
+  s_a06df77ee2692f::t_8ded9745ec08b3 248
+  s_a06df77ee2692f::t_794d3753b4328f 38-41
+src/main/resources/static/index.html
+  s_a06df77ee2692f::t_8e5231a4183059 138
+  s_a06df77ee2692f::t_88dcbc82e2cf8b 215
+  s_a06df77ee2692f::t_6050efc0be4f46 128-132
+  s_a06df77ee2692f::t_3aa993025ae9e5 151-152
+  s_a06df77ee2692f::t_171747a5cc9de9 193-201
+  s_a06df77ee2692f::t_d174ba2deab4b8 223-235
+src/test/java/org/jotaro/jotarocode/skill/SkillCatalogTest.java
+  s_a06df77ee2692f::t_0180fefb8038f3 57
+  s_a06df77ee2692f::t_50f27954d9ada9 1-56,58-84
+src/main/java/org/jotaro/jotarocode/controller/SessionController.java
+  s_a06df77ee2692f::t_7063d909e0c920 20-21
+  s_a06df77ee2692f::t_79d04606aace82 11
+  s_a06df77ee2692f::t_a6c50ea60ab624 43,52-53
+  s_a06df77ee2692f::t_cc8b8f4cb07b6e 9
+  s_a06df77ee2692f::t_da2771bc16cdd6 28
+  s_a06df77ee2692f::t_95f16fbccbfa87 44-51
+src/main/java/org/jotaro/jotarocode/model/response/SkillView.java
+  s_a06df77ee2692f::t_652c9833d1ea4f 1-12
+src/main/java/org/jotaro/jotarocode/service/impl/AgentSessionServiceImpl.java
+  s_a06df77ee2692f::t_1098e87892a8e3 112-119
+  s_a06df77ee2692f::t_7ac01ec2dd04ac 37
+  s_a06df77ee2692f::t_51733bf7daab54 55
+  s_a06df77ee2692f::t_f7de4d2d11f4ca 15
+  s_a06df77ee2692f::t_defd4cf4a588a0 66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "db3b5d52a1908d75db6466d52d358046ff771a9d",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
