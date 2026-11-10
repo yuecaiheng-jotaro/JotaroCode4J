@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: pi-agent
+  ai:
+    deepseek:
+      api-key: sk-65921a2add254d57be16610361e8aa43
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
+    zhipuai:
+      api-key: ${ZHIPU_API_KEY:your-api-key}
+      base-url: https://open.bigmodel.cn/api/paas
+      chat:
+        options:
+          model: glm-4.6
+
+piagent:
+  mode: server
+  model: deepseek-chat
+  max-steps: 20
+  message-window: 40
+  system-prompt: |
+    你是 Pi Agent，一个会调用工具完成任务的助手。
+    需要读取工作目录里的文件时调用 readFile。
+    需要当前时间时调用 currentTime。
+    任务完成后调用 terminate。
