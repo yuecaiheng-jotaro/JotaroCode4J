@@ -1,0 +1,23 @@
+package org.jotaro.jotarocode.config;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/**
+ * {@code application.yaml} 里 {@code piagent.*} 的绑定。
+ * {@code mode} 决定是网页服务还是终端；{@code maxSteps} 是助手消息条数上限，不是工具调用次数。
+ */
+@Data
+@ConfigurationProperties(prefix = "piagent")
+public class PiAgentProperties {
+    private String mode = "server";
+    private String model = "deepseek-chat";
+    private int maxSteps = 20;
+    private int messageWindow = 40;
+    private String systemPrompt = """
+            你是 Jotaro，一个会调用工具完成编程任务的助手。
+            用 read 查看文件，用 write 创建或覆盖文件，用 edit 做精确替换。
+            用 ls 列目录，用 grep 搜内容，用 find 按 glob 找文件，用 bash 或 powershell 执行命令。
+            需要当前时间时调用 currentTime。任务完成后调用 terminate。
+            """;
+}

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<!--
+  和后端同一个进程，打开 http://127.0.0.1:8080 即可。
+  启动顺序：拉模型列表 → 拉技能 → POST /api/sessions → 立刻用 EventSource 订阅 /events。
+  必须先连上事件流再发消息，否则开头的增量没有人接收。
+  MESSAGE_UPDATE 的 text 是增量，拼到当前助手气泡上。
+  如果已经拼过增量，MESSAGE_END 里的全文不能再追加。
+  用户气泡是本地画的，服务端再推来的 user MESSAGE_END 会被忽略。
+  运行中按钮变成「停止」，点击走 /abort。
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jotaro UI</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c1915;
+      --muted: #6d655c;
+      --line: #ddd4c6;
+      --paper: #f6f1e7;
+      --panel: #fffdf8;
+      --accent: #b84e1f;
+      --accent-ink: #fff8f3;
+      --tool: #efe7d8;
+      --danger: #8d2d2d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.5 "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    }
+
+    header, form {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 20px;
+      background: var(--panel);
+      border-color: var(--line);
+      border-style: solid;
+    }
+
+    header { border-width: 0 0 1px; }
+    form { border-width: 1px 0 0; align-items: flex-end; }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-right: auto;
+    }
+
+    label { color: var(--muted); font-size: 14px; }
+
+    select, button, textarea {
+      font: inherit;
+      color: inherit;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    select, button { padding: 6px 10px; }
+    button { cursor: pointer; }
+    button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    button:disabled { opacity: 0.55; cursor: default; }
+
+    #status { min-width: 4em; color: var(--muted); font-size: 14px; }
+
+    main {
+      overflow: auto;
+      padding: 24px 20px 32px;
+    }
+
+    .thread {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bubble, .tool, .note {
+      padding: 12px 14px;
+      border-radius: 12px;
+    }
+
+    .user {
+      align-self: flex-end;
+      max-width: min(70%, 560px);
+      background: var(--ink);
+      color: #f8f4ec;
+      white-space: pre-wrap;
+    }
+
+    .assistant {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      white-space: pre-wrap;
+    }
+
+    .tool {
+      background: var(--tool);
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .tool.error { color: var(--danger); }
+    .tool .name { font-weight: 700; }
+    .note { color: var(--muted); font-size: 14px; }
+    .empty { color: var(--muted); padding: 48px 0; }
+
+    textarea {
+      flex: 1;
+      min-height: 72px;
+      resize: vertical;
+      padding: 10px 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Jotaro UI</div>
+    <label>模型
+      <select id="model"></select>
+    </label>
+    <label id="skill-label" hidden>技能
+      <select id="skill">
+        <option value="">选择</option>
+      </select>
+    </label>
+    <button id="reset" type="button">新会话</button>
+    <span id="status">连接中</span>
+  </header>
+  <main>
+    <div class="thread" id="thread">
+      <div class="empty" id="empty">直接描述要做的事。匹配到技能时会读取对应的 SKILL.md，也可以输入 /skill:名称 强制加载。</div>
+    </div>
+  </main>
+  <form id="composer">
+    <textarea id="input" placeholder="输入任务，Enter 发送，Shift+Enter 换行"></textarea>
+    <button class="primary" id="action" type="submit">发送</button>
+  </form>
+  <script>
+    const thread = document.querySelector("#thread");
+    const empty = document.querySelector("#empty");
+    const input = document.querySelector("#input");
+    const action = document.querySelector("#action");
+    const modelSelect = document.querySelector("#model");
+    const skillSelect = document.querySelector("#skill");
+    const skillLabel = document.querySelector("#skill-label");
+    const status = document.querySelector("#status");
+    const composer = document.querySelector("#composer");
+
+    let sessionId = null;
+    let source = null;
+    let running = false;
+    let assistantNode = null;
+    let streamed = false;
+    const tools = new Map();
+
+    composer.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (running) {
+        abort();
+        return;
+      }
+      const text = input.value.trim();
+      if (!text || !sessionId) return;
+      input.value = "";
+      hideEmpty();
+      addBubble("user", text);
+      post(`/api/sessions/${sessionId}/messages`, { content: text }).catch(showError);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        composer.requestSubmit();
+      }
+    });
+
+    document.querySelector("#reset").addEventListener("click", () => {
+      openSession(modelSelect.value).catch(showError);
+    });
+
+    modelSelect.addEventListener("change", () => {
+      if (!sessionId || running) return;
+      post(`/api/sessions/${sessionId}/model`, { model: modelSelect.value }).catch(showError);
+    });
+
+    skillSelect.addEventListener("change", () => {
+      const name = skillSelect.value;
+      skillSelect.value = "";
+      if (!name) return;
+      const command = "/skill:" + name + " ";
+      input.value = input.value.trim() ? input.value.replace(/\s*$/, "") + "\n" + command : command;
+      input.focus();
+    });
+
+    boot();
+
+    async function boot() {
+      try {
+        const listed = await get("/api/models");
+        modelSelect.replaceChildren();
+        for (const name of listed.models || []) {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          option.selected = name === listed.model;
+          modelSelect.append(option);
+        }
+        await loadSkills();
+        await openSession(listed.model);
+      } catch (error) {
+        setStatus("未连接");
+        showError(error);
+      }
+    }
+
+    async function loadSkills() {
+      const skills = await get("/api/skills");
+      skillSelect.replaceChildren(new Option("选择", ""));
+      for (const skill of skills || []) {
+        const option = document.createElement("option");
+        option.value = skill.name;
+        option.textContent = skill.commandOnly ? skill.name + "（仅命令）" : skill.name;
+        option.title = skill.description || "";
+        skillSelect.append(option);
+      }
+      skillLabel.hidden = !skills || skills.length === 0;
+    }
+
+    async function openSession(model) {
+      closeSource();
+      if (sessionId && running) {
+        post(`/api/sessions/${sessionId}/abort`, {}).catch(() => {});
+      }
+      clearThread();
+      setRunning(false);
+      const created = await post("/api/sessions", { model });
+      sessionId = created.sessionId;
+      if (created.model) modelSelect.value = created.model;
+      source = new EventSource(`/api/sessions/${sessionId}/events`);
+      source.addEventListener("message", (event) => {
+        try {
+          handleEvent(JSON.parse(event.data));
+        } catch (error) {
+          showError(error);
+        }
+      });
+      source.onerror = () => {
+        if (source && source.readyState === EventSource.CLOSED) setStatus("连接中断");
+      };
+      setStatus("空闲");
+      input.focus();
+    }
+
+    function handleEvent(event) {
+      if (event.type === "AGENT_START" || event.type === "TURN_START") setRunning(true);
+      if (event.type === "MESSAGE_UPDATE" && event.text) {
+        hideEmpty();
+        assistantNode = assistantNode || addBubble("assistant", "");
+        assistantNode.textContent += event.text;
+        streamed = true;
+        scrollDown();
+      }
+      if (event.type === "MESSAGE_END" && event.role === "assistant") {
+        if (!streamed && event.text) {
+          hideEmpty();
+          assistantNode = assistantNode || addBubble("assistant", "");
+          assistantNode.textContent = event.text;
+        }
+        assistantNode = null;
+        streamed = false;
+      }
+      if (event.type === "TOOL_EXECUTION_START") {
+        hideEmpty();
+        const node = document.createElement("div");
+        node.className = "tool";
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = "→ " + (event.toolName || "tool");
+        const args = document.createElement("div");
+        args.textContent = event.arguments || "";
+        node.append(name, args);
+        thread.append(node);
+        if (event.toolCallId) tools.set(event.toolCallId, node);
+        scrollDown();
+      }
+      if (event.type === "TOOL_EXECUTION_END") {
+        const node = (event.toolCallId && tools.get(event.toolCallId)) || thread.querySelector(".tool:last-of-type");
+        if (!node) return;
+        if (event.error) node.classList.add("error");
+        const result = document.createElement("div");
+        result.textContent = (event.error ? "✗ " : "← ") + (event.result || "");
+        node.append(result);
+        scrollDown();
+      }
+      if (event.type === "AGENT_END") {
+        setRunning(false);
+        assistantNode = null;
+        streamed = false;
+        if (event.stepLimitReached) addNote("已达到最大步数");
+      }
+    }
+
+    function addBubble(role, text) {
+      const node = document.createElement("div");
+      node.className = "bubble " + role;
+      node.textContent = text;
+      thread.append(node);
+      scrollDown();
+      return node;
+    }
+
+    function addNote(text) {
+      const node = document.createElement("div");
+      node.className = "note";
+      node.textContent = text;
+      thread.append(node);
+    }
+
+    function showError(error) {
+      addNote(error && error.message ? error.message : "请求失败");
+    }
+
+    function hideEmpty() {
+      empty.hidden = true;
+    }
+
+    function clearThread() {
+      thread.replaceChildren(empty);
+      empty.hidden = false;
+      tools.clear();
+      assistantNode = null;
+      streamed = false;
+    }
+
+    function setRunning(value) {
+      running = value;
+      action.textContent = value ? "停止" : "发送";
+      modelSelect.disabled = value;
+      setStatus(value ? "运行中" : "空闲");
+    }
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function abort() {
+      if (!sessionId) return;
+      post(`/api/sessions/${sessionId}/abort`, {}).catch(showError);
+    }
+
+    function closeSource() {
+      if (source) source.close();
+      source = null;
+    }
+
+    function scrollDown() {
+      thread.parentElement.scrollTop = thread.parentElement.scrollHeight;
+    }
+
+    async function get(url) {
+      return read(await fetch(url));
+    }
+
+    async function post(url, body) {
+      return read(await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }));
+    }
+
+    async function read(response) {
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload || payload.code !== 200) {
+        throw new Error((payload && payload.message) || "请求失败");
+      }
+      return payload.data;
+    }
+  </script>
+</body>
+</html>
