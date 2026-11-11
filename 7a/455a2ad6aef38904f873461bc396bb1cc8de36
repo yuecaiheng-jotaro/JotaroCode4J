@@ -1,0 +1,66 @@
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/WriteTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 13
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/FindTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 18
+src/main/java/org/jotaro/jotarocode/agent/tools/ToolObjects.java
+  s_a06df77ee2692f::t_23a3e8b374f4e5 3-50
+src/test/java/org/jotaro/jotarocode/tui/SlashCommandCompleterTest.java
+  s_a06df77ee2692f::t_3890f3f1233d01 1,3-6,8,11,13-14,16-25,28-32,35-39
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/LsTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 17
+src/main/java/org/jotaro/jotarocode/agent/tools/ClockTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 9
+src/main/java/org/jotaro/jotarocode/tui/SlashCommandCompleter.java
+  s_a06df77ee2692f::t_f488d6d23c7034 1,3-6,8,10,12-16,18-25,27-62
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/PowerShellTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 15
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/GrepTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 23
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/EditTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 20
+README.md
+  s_a06df77ee2692f::t_d6944f477bb194 20
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/BashTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 12
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_a06df77ee2692f::t_02e95aec4c3f8e 42-46
+  s_a06df77ee2692f::t_975858bfac08e8 21
+  s_a06df77ee2692f::t_1344ceec9450cc 89
+src/main/java/org/jotaro/jotarocode/agent/PiAgentFactory.java
+  s_a06df77ee2692f::t_97dd8e16560569 68
+  s_a06df77ee2692f::t_44ffe4ebde8600 22
+  s_a06df77ee2692f::t_7eeb2c0d69c695 70
+  s_a06df77ee2692f::t_7f6eab170c6b99 7
+  s_a06df77ee2692f::t_fe31074d8dd6ae 29,34,38
+  s_a06df77ee2692f::t_9cadbd479861f2 56
+src/test/java/org/jotaro/jotarocode/agent/tools/coding/CodingToolsTest.java
+  s_a06df77ee2692f::t_d0ada65b7a83a9 29
+src/main/java/org/jotaro/jotarocode/agent/tools/package-info.java
+  s_a06df77ee2692f::t_3c3adc04cf6ffd 2-4
+src/main/java/org/jotaro/jotarocode/service/package-info.java
+  s_a06df77ee2692f::t_86ef5c05d3bd60 5
+src/test/java/org/jotaro/jotarocode/agent/tools/ToolObjectsTest.java
+  s_a06df77ee2692f::t_6e84fd5fdc1b89 3,5-6,8-15
+src/main/java/org/jotaro/jotarocode/agent/tools/TerminateTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 9
+src/main/java/org/jotaro/jotarocode/service/impl/package-info.java
+  s_a06df77ee2692f::t_868a4ab2b2d2e5 2
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ReadTool.java
+  s_a06df77ee2692f::t_1c5586b2f26031 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "7a455a2ad6aef38904f873461bc396bb1cc8de36",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
