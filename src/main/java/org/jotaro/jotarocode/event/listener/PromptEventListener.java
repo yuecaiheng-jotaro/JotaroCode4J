@@ -2,7 +2,7 @@ package org.jotaro.jotarocode.event.listener;
 
 import org.jotaro.jotarocode.event.PromptEvent;
 import org.jotaro.jotarocode.service.AgentSessionService;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
  * 否则异步线程里的异常只会变成未捕获异常，页面看不到。
  */
 @Component
-@AllArgsConstructor
 @Slf4j
 public class PromptEventListener {
 
-    private final AgentSessionService agentSessionService;
+    @Resource
+    private AgentSessionService agentSessionService;
 
     @Async
     @EventListener

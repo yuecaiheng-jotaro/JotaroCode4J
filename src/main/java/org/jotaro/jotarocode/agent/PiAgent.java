@@ -32,18 +32,57 @@ import java.util.function.Function;
 @Slf4j
 public class PiAgent {
 
+    /**
+     * 系统提示词
+     */
     private final String systemPrompt;
+
+    /**
+     * 可用工具集
+     */
     private final List<AgentTool> tools;
+
+    /**
+     * 最大执行步长
+     */
     private final int maxSteps;
     private final int messageWindow;
+
+    /**
+     * 工具执行模式
+     */
     private final ToolExecutionMode toolExecution;
+
+    /**
+     * 完整的会话历史
+     */
     private final List<Message> messages = new ArrayList<>();
+
+    /**
+     * steering 等待队列,tui目前使用的队列
+     */
     private final PendingMessageQueue steeringQueue = new PendingMessageQueue();
+
+    /**
+     * follow队列，如果只用一个队列，和steeringQueue功能类似
+     */
     private final PendingMessageQueue followUpQueue = new PendingMessageQueue();
+
+    /**
+     * 监听这个启动的hook触发队列
+     */
     private final List<Consumer<AgentEvent>> listeners = new CopyOnWriteArrayList<>();
+
+    /**
+     * agent级别的chat锁
+     */
     private final Object runLock = new Object();
 
     private AssistantStreamer streamer;
+
+    /**
+     * agent运行时线程管理器
+     */
     private volatile RunControl runControl = new RunControl();
     private volatile boolean running;
     private volatile AgentState state = AgentState.IDLE;
@@ -173,10 +212,10 @@ public class PiAgent {
                     .control(control)
                     .beforeToolCall(beforeToolCall)
                     .build(), this::dispatch).run();
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException e) {
             state = AgentState.ERROR;
-            log.error("Agent 运行失败", exception);
-            throw exception;
+            log.error("Agent 运行失败", e);
+            throw e;
         } finally {
             // abort 会打断工作线程。标记留着的话，这条线程上下一次运行会立刻被中断。
             Thread.interrupted();
@@ -196,6 +235,7 @@ public class PiAgent {
                 messages.add(event.getMessage());
             }
         }
+        // 状态机转换
         switch (event.getType()) {
             case AGENT_START, TURN_START -> state = AgentState.THINKING;
             case TOOL_EXECUTION_START -> state = AgentState.EXECUTING;
@@ -212,9 +252,10 @@ public class PiAgent {
             default -> {
             }
         }
-        for (Consumer<AgentEvent> listener : listeners) {
-            listener.accept(event);
-        }
+
+        // 事件hook，触发一遍所有监听agent事件的函数
+        listeners.forEach(listener -> listener.accept(event));
+
     }
 
     private static UserMessage userMessage(String text) {

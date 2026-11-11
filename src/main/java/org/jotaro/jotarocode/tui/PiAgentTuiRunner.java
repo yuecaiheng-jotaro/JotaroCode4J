@@ -4,7 +4,7 @@ import org.jotaro.jotarocode.agent.PiAgent;
 import org.jotaro.jotarocode.agent.PiAgentFactory;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
 import org.jotaro.jotarocode.config.PiAgentProperties;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.Resource;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -14,12 +14,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConditionalOnProperty(name = "piagent.mode", havingValue = "tui")
-@AllArgsConstructor
 public class PiAgentTuiRunner implements CommandLineRunner {
 
-    private final PiAgentFactory piAgentFactory;
-    private final ChatClientRegistry chatClientRegistry;
-    private final PiAgentProperties properties;
+    @Resource
+    private PiAgentFactory piAgentFactory;
+    @Resource
+    private ChatClientRegistry chatClientRegistry;
+    @Resource
+    private PiAgentProperties properties;
 
     @Override
     public void run(String... args) throws Exception {

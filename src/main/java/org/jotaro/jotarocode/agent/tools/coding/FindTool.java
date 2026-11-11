@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +16,7 @@ import java.util.List;
 
 /** 按 glob 找文件路径。默认最多 1000 条，遵守 .gitignore，不进入 .git。 */
 @Component
-public class FindTool {
+public class FindTool implements ToolContributor {
 
     private static final int DEFAULT_LIMIT = 1000;
 

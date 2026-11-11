@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -9,7 +10,7 @@ import java.util.List;
 
 /** 在工作目录执行 bash。默认 120 秒超时，非零退出码和超时都会抛异常，循环把它记成工具错误。 */
 @Component
-public class BashTool {
+public class BashTool implements ToolContributor {
 
     @org.springframework.ai.tool.annotation.Tool(
             name = "bash",

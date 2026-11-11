@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,7 @@ import java.util.List;
  * 对不上就失败，不会做模糊匹配。
  */
 @Component
-public class EditTool {
+public class EditTool implements ToolContributor {
 
     @org.springframework.ai.tool.annotation.Tool(
             name = "edit",

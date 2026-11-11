@@ -4,14 +4,16 @@ import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.CallbackAgentTool;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
-import org.jotaro.jotarocode.agent.tools.ToolObjects;
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
 import org.jotaro.jotarocode.config.PiAgentProperties;
 import org.jotaro.jotarocode.exception.BizException;
 import org.jotaro.jotarocode.skill.SkillCatalog;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -19,25 +21,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 按一次会话的需要组装 {@link PiAgent}：选模型、拼系统提示、把带 {@code @Tool} 的 Bean 适配成循环认识的 {@code AgentTool}。
+ * 按一次会话的需要组装 {@link PiAgent}：选模型、拼系统提示、把 {@code ToolContributor} 适配成循环认识的 {@code AgentTool}。
  * 技能目录只在创建时读一次，之后换模型不会重新扫描技能。
  */
 @Component
 public class PiAgentFactory {
 
-    private final ChatClientRegistry chatClientRegistry;
-    private final ToolObjects toolObjects;
-    private final PiAgentProperties properties;
-    private final SkillCatalog skillCatalog;
+    @Resource
+    private ChatClientRegistry chatClientRegistry;
+    @Resource
+    private List<ToolContributor> contributors;
+    @Resource
+    private PiAgentProperties properties;
+    @Resource
+    private SkillCatalog skillCatalog;
 
-    public PiAgentFactory(ChatClientRegistry chatClientRegistry,
-                          ToolObjects toolObjects,
-                          PiAgentProperties properties,
-                          SkillCatalog skillCatalog) {
-        this.chatClientRegistry = chatClientRegistry;
-        this.toolObjects = toolObjects;
-        this.properties = properties;
-        this.skillCatalog = skillCatalog;
+    private List<AgentTool> tools = List.of();
+
+    @PostConstruct
+    void registerTools() {
+        this.tools = adaptTools(contributors);
     }
 
     public PiAgent create(String model, String systemPrompt) {
@@ -53,7 +56,7 @@ public class PiAgentFactory {
         }
         return new PiAgent(
                 resolvedPrompt,
-                adaptTools(toolObjects.all()),
+                tools,
                 new SpringAiAssistantStreamer(chatClient),
                 properties.getMaxSteps(),
                 properties.getMessageWindow(),
@@ -65,16 +68,14 @@ public class PiAgentFactory {
      * 关掉 Spring AI 的自动执行后，模型仍然需要 {@code ToolCallback} 才能看到参数定义。
      * 这里保留 callback 供模型声明使用，真正调用发生在循环里的 {@code callback.call}。
      */
-    private List<AgentTool> adaptTools(List<Object> tools) {
+    private static List<AgentTool> adaptTools(List<ToolContributor> contributors) {
+        if (contributors == null || contributors.isEmpty()) {
+            return List.of();
+        }
+        ToolCallback[] callbacks = ToolCallbacks.from(contributors.toArray());
         List<AgentTool> agentTools = new ArrayList<>();
-        for (Object tool : tools) {
-            ToolCallback[] callbacks = MethodToolCallbackProvider.builder()
-                    .toolObjects(tool)
-                    .build()
-                    .getToolCallbacks();
-            for (ToolCallback callback : callbacks) {
-                agentTools.add(new CallbackAgentTool(callback));
-            }
+        for (ToolCallback callback : callbacks) {
+            agentTools.add(new CallbackAgentTool(callback));
         }
         return agentTools;
     }

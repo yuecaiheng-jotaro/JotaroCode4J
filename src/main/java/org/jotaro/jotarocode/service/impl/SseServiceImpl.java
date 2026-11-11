@@ -3,7 +3,7 @@ package org.jotaro.jotarocode.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jotaro.jotarocode.model.dto.AgentEventView;
 import org.jotaro.jotarocode.service.SseService;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -17,12 +17,12 @@ import java.util.concurrent.ConcurrentMap;
  * 超时 30 分钟；完成、超时、写失败都会从 Map 里摘掉，避免向已断开的连接继续写。
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class SseServiceImpl implements SseService {
 
     private final ConcurrentMap<String, SseEmitter> clients = new ConcurrentHashMap<>();
-    private final ObjectMapper objectMapper;
+    @Resource
+    private ObjectMapper objectMapper;
 
     @Override
     public SseEmitter connect(String sessionId) {

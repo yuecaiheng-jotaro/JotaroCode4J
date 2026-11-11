@@ -117,7 +117,7 @@ flowchart TD
 
 ## 工具
 
-带 `@Tool` 方法的 `@Component` 会在创建会话时被收进去，不用再登记名字。
+实现 `ToolContributor` 并标成 `@Component`，方法上用 `@Tool` 声明参数。Spring 会把这些 Bean 注入工厂，新工具不用改装配代码。
 
 | 名称 | 作用 |
 | --- | --- |

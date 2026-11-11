@@ -1,9 +1,9 @@
 package org.jotaro.jotarocode.config;
 
+import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.zhipuai.ZhiPuAiChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,18 +15,25 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MultiChatClientConfig {
 
+    @Resource
+    private DeepSeekChatModel deepSeekChatModel;
+    @Resource
+    private ZhiPuAiChatModel zhiPuAiChatModel;
+    @Resource
+    private OpenAiChatModel openAiChatModel;
+
     @Bean("deepseek-chat")
-    public ChatClient deepSeekChatClient(DeepSeekChatModel deepSeekChatModel) {
+    public ChatClient deepSeekChatClient() {
         return ChatClient.create(deepSeekChatModel);
     }
 
     @Bean("glm-4.6")
-    public ChatClient zhiPuAiChatClient(ZhiPuAiChatModel zhiPuAiChatModel) {
+    public ChatClient zhiPuAiChatClient() {
         return ChatClient.create(zhiPuAiChatModel);
     }
 
     @Bean("qwen4-max-preview")
-    public ChatClient qwenChatClient(OpenAiChatModel openAiChatModel) {
+    public ChatClient qwenChatClient() {
         return ChatClient.create(openAiChatModel);
     }
 }

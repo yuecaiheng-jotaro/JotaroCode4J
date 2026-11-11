@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +13,7 @@ import java.util.List;
  * 命令前加一行把控制台输出改成 UTF-8，避免中文乱码。
  */
 @Component
-public class PowerShellTool {
+public class PowerShellTool implements ToolContributor {
 
     private static final String UTF8_PREFIX =
             "try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}\n";

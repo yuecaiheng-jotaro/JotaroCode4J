@@ -13,7 +13,7 @@ import org.jotaro.jotarocode.model.response.CreateSessionResponse;
 import org.jotaro.jotarocode.service.AgentSessionService;
 import org.jotaro.jotarocode.service.SseService;
 import org.jotaro.jotarocode.skill.SkillCatalog;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.Resource;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -32,13 +32,16 @@ import java.util.concurrent.ConcurrentMap;
  * {@code /skill:名称} 在发布事件前展开成技能正文，页面上仍显示用户原来输入的那一行。
  */
 @Service
-@RequiredArgsConstructor
 public class AgentSessionServiceImpl implements AgentSessionService {
 
-    private final PiAgentFactory piAgentFactory;
-    private final SseService sseService;
-    private final ApplicationEventPublisher eventPublisher;
-    private final SkillCatalog skillCatalog;
+    @Resource
+    private PiAgentFactory piAgentFactory;
+    @Resource
+    private SseService sseService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
+    @Resource
+    private SkillCatalog skillCatalog;
     private final ConcurrentMap<String, PiAgent> sessions = new ConcurrentHashMap<>();
 
     @Override

@@ -9,7 +9,7 @@ import org.jotaro.jotarocode.model.response.ModelListResponse;
 import org.jotaro.jotarocode.model.response.SkillView;
 import org.jotaro.jotarocode.service.AgentSessionService;
 import org.jotaro.jotarocode.skill.SkillCatalog;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,11 +25,12 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api")
-@AllArgsConstructor
 public class SessionController {
 
-    private final AgentSessionService agentSessionService;
-    private final SkillCatalog skillCatalog;
+    @Resource
+    private AgentSessionService agentSessionService;
+    @Resource
+    private SkillCatalog skillCatalog;
 
     @PostMapping("/sessions")
     public ApiResponse<CreateSessionResponse> create(@RequestBody(required = false) CreateSessionRequest request) {

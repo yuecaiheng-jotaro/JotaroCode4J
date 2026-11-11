@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +11,7 @@ import java.nio.file.Path;
 
 /** 创建或整文件覆盖。父目录不存在时会创建。和 edit 共用文件锁。 */
 @Component
-public class WriteTool {
+public class WriteTool implements ToolContributor {
 
     @org.springframework.ai.tool.annotation.Tool(
             name = "write",

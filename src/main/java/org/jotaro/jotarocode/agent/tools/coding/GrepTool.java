@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
  * 单行超过 500 字符会截断。默认最多 100 条。
  */
 @Component
-public class GrepTool {
+public class GrepTool implements ToolContributor {
 
     private static final int DEFAULT_LIMIT = 100;
 

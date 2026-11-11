@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.config;
 
+import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
@@ -10,11 +11,8 @@ import java.util.Set;
 @Component
 public class ChatClientRegistry {
 
-    private final Map<String, ChatClient> chatClients;
-
-    public ChatClientRegistry(Map<String, ChatClient> chatClients) {
-        this.chatClients = chatClients;
-    }
+    @Resource
+    private Map<String, ChatClient> chatClients;
 
     public ChatClient get(String key) {
         return chatClients.get(key);

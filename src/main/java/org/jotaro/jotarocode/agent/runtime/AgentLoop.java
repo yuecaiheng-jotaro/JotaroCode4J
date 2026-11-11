@@ -42,8 +42,10 @@ public final class AgentLoop {
     }
 
     private void doRun() {
-        // 开跑前先取走已经排队的 steering，避免用户在启动瞬间插的话被丢掉。
+        // 开跑前先取走已经排队的 steering，避免用户在启动瞬间插的话被丢掉。一次只取一条消息
         List<Message> pending = new ArrayList<>(drain(request.getSteeringMessages()));
+
+        // 【hook-1】turn开始前的hook，进入loop前
         emit(AgentEvent.of(AgentEventType.AGENT_START));
 
         // finishTurn 返回 CONTINUE 时，即使没有工具也要再向模型要一轮。
@@ -52,7 +54,10 @@ public final class AgentLoop {
             // 内层持续到：模型不再要工具，并且没有待插入的 steering。
             boolean hasMoreToolCalls = true;
             while (hasMoreToolCalls || !pending.isEmpty()) {
+                // 【hook-2】loop中，每个turn开始前
                 emit(AgentEvent.of(AgentEventType.TURN_START));
+
+                // 放入loop的message里，即当前react循环里的消息
                 appendPending(pending);
                 pending = new ArrayList<>();
 
@@ -65,9 +70,12 @@ public final class AgentLoop {
                     finish(true);
                     return;
                 }
-
+                // 处理当前turn
                 AssistantTurn turn = streamAssistant();
+
+                // 处理完当前turn，内部存置loop的列表里
                 messages.add(turn.getMessage());
+                // hook 留置位
                 emit(AgentEvent.builder()
                         .type(AgentEventType.MESSAGE_END)
                         .message(turn.getMessage())
@@ -191,6 +199,7 @@ public final class AgentLoop {
     /**
      * 发给模型的窗口。超长时保留开头的系统提示，并从窗口起点往前挪，
      * 避免一条工具结果落在窗口里、对应的助手工具调用却被裁掉。
+     * todo 做上下文压缩
      */
     private List<Message> visibleMessages() {
         int window = request.getModelWindow();

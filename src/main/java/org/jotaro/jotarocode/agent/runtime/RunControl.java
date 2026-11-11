@@ -22,6 +22,7 @@ public final class RunControl {
     /**
      * 把当前线程登记到这次运行上。并行工具在自己的线程里再装一次，因为 ThreadLocal 不会传过去。
      * 返回之前装的开关，离开时再装回去。
+     * todo 理解：1. abort 2. 还原
      */
     public static RunControl install(RunControl control) {
         Thread thread = Thread.currentThread();

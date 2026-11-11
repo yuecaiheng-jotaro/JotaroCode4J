@@ -6,6 +6,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.util.StringUtils;
@@ -46,7 +47,8 @@ public final class SpringAiAssistantStreamer implements AssistantStreamer {
                                 Consumer<String> onTextDelta,
                                 Consumer<String> onReasoningDelta) {
         RunControl runControl = control == null ? new RunControl() : control;
-        var options = DefaultToolCallingChatOptions.builder()
+        ChatOptions options = DefaultToolCallingChatOptions.builder()
+                // 关掉spring ai自动工具执行，让toolCall以resp的形式返回而不是直接去调用
                 .internalToolExecutionEnabled(false)
                 .build();
         ChatClient.ChatClientRequestSpec spec = chatClient.prompt()

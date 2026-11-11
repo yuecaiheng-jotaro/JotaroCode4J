@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +19,7 @@ import java.util.Map;
  * 图片不附带内容，只返回一句说明，避免把二进制塞进对话。
  */
 @Component
-public class ReadTool {
+public class ReadTool implements ToolContributor {
 
     private static final Map<String, String> IMAGES = Map.of(
             "jpg", "image/jpeg",

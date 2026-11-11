@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent.tools.coding;
 
+import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
 
 /** 列目录。目录名以 {@code /} 结尾，包含点文件，默认最多 500 条，并跳过 gitignore 命中的项。 */
 @Component
-public class LsTool {
+public class LsTool implements ToolContributor {
 
     private static final int DEFAULT_LIMIT = 500;
 
