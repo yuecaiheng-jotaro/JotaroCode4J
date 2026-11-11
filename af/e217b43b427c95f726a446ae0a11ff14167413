@@ -1,0 +1,27 @@
+src/main/java/org/jotaro/jotarocode/agent/runtime/RunControl.java
+  s_fd3aa6c5ad6a65::t_1b67a3340b029f 5-6,11-12,20,22-25,27,29-31,36,47-52
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ShellRunner.java
+  s_fd3aa6c5ad6a65::t_ab4f2b88f303f8 88
+src/test/java/org/jotaro/jotarocode/agent/runtime/RunControlTest.java
+  s_fd3aa6c5ad6a65::t_fa6c3dc13203f9 1-42
+src/main/java/org/jotaro/jotarocode/agent/PiAgent.java
+  s_fd3aa6c5ad6a65::t_52efeb14af743c 181
+src/main/java/org/jotaro/jotarocode/tui/QuestionGate.java
+  s_fd3aa6c5ad6a65::t_10c144a354bc08 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "afe217b43b427c95f726a446ae0a11ff14167413",
+  "prompts": {},
+  "sessions": {
+    "s_fd3aa6c5ad6a65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2ec3378c-8c12-4b3d-bf7b-b49fac9554e8",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
