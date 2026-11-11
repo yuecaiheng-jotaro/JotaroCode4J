@@ -1,0 +1,84 @@
+README.md
+  s_a06df77ee2692f::t_dfad61178eff1e 120
+src/main/java/org/jotaro/jotarocode/controller/SessionController.java
+  s_a06df77ee2692f::t_08bf449897c150 12
+  s_a06df77ee2692f::t_1834fed290145a 30-33
+src/main/java/org/jotaro/jotarocode/controller/SseController.java
+  s_a06df77ee2692f::t_76a6e921a119b3 19-20
+  s_a06df77ee2692f::t_e30ef93f0e9e2b 4
+src/test/java/org/jotaro/jotarocode/config/ResourceCollectionInjectionTest.java
+  s_a06df77ee2692f::t_be7241849e4c3b 1-39
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/EditTool.java
+  s_a06df77ee2692f::t_a9c797d4f636ce 21
+  s_a06df77ee2692f::t_0dded4c2233681 3
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/WriteTool.java
+  s_a06df77ee2692f::t_6aced51d190e51 14
+  s_a06df77ee2692f::t_48ecab14d53c7c 3
+src/main/java/org/jotaro/jotarocode/service/impl/SseServiceImpl.java
+  s_a06df77ee2692f::t_1ed6adfb3bfcb0 6
+  s_a06df77ee2692f::t_97899366224483 24-25
+src/main/java/org/jotaro/jotarocode/service/impl/AgentSessionServiceImpl.java
+  s_a06df77ee2692f::t_a9529c06d3f682 16
+  s_a06df77ee2692f::t_244358f2143ae2 37-44
+src/main/java/org/jotaro/jotarocode/agent/tools/ClockTool.java
+  s_a06df77ee2692f::t_f6c14b69dbc6e0 9
+src/main/java/org/jotaro/jotarocode/agent/tools/TerminateTool.java
+  s_a06df77ee2692f::t_c068a7479f9538 9
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ReadTool.java
+  s_a06df77ee2692f::t_4ff2291f3c721c 22
+  s_a06df77ee2692f::t_c1e03a6478427b 3
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/FindTool.java
+  s_a06df77ee2692f::t_59531b7193c8af 3
+  s_a06df77ee2692f::t_f0cb5c6641d3f4 19
+src/main/java/org/jotaro/jotarocode/config/MultiChatClientConfig.java
+  s_a06df77ee2692f::t_9472472b7ebe7e 3
+  s_a06df77ee2692f::t_dd7b55e5267edb 18-24,26,31,36
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/LsTool.java
+  s_a06df77ee2692f::t_b013d4573bac1d 3
+  s_a06df77ee2692f::t_46033f8755e94d 18
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/GrepTool.java
+  s_a06df77ee2692f::t_f2868ea4498f42 3
+  s_a06df77ee2692f::t_d134a70ca57af4 24
+src/main/java/org/jotaro/jotarocode/event/listener/PromptEventListener.java
+  s_a06df77ee2692f::t_aa5cef8a530914 19-20
+  s_a06df77ee2692f::t_fd9dfae6f9b229 5
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/PowerShellTool.java
+  s_a06df77ee2692f::t_2f660d7210faf9 16
+  s_a06df77ee2692f::t_aa71122574a0bc 3
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/BashTool.java
+  s_a06df77ee2692f::t_3f3a8de32b291f 3
+  s_a06df77ee2692f::t_e1462b7fac6d86 13
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTuiRunner.java
+  s_a06df77ee2692f::t_46dd34250a4b91 19-24
+  s_a06df77ee2692f::t_0a2e9e61fff1d4 7
+src/main/java/org/jotaro/jotarocode/agent/PiAgentFactory.java
+  s_a06df77ee2692f::t_1ead5b87091f20 59
+  s_a06df77ee2692f::t_1febd547929b0d 71-75,77-78
+  s_a06df77ee2692f::t_00a68c48be5baf 24
+  s_a06df77ee2692f::t_c670d0db6c740d 43
+  s_a06df77ee2692f::t_5717085c3309c3 30-37,39-41
+  s_a06df77ee2692f::t_8e28f625de78de 7,15
+  s_a06df77ee2692f::t_0cfd37a030123b 42
+  s_a06df77ee2692f::t_d23bf38bebb8c9 12-13
+src/main/java/org/jotaro/jotarocode/config/ChatClientRegistry.java
+  s_a06df77ee2692f::t_796a0659f00678 14-15
+  s_a06df77ee2692f::t_037fb5866ef8f8 3
+src/main/java/org/jotaro/jotarocode/agent/tools/ToolContributor.java
+  s_a06df77ee2692f::t_2e4d67183d6cd3 1-2,4-5,7-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "b9de8214adfaca4c10e3e2780f103f29401cda5a",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
