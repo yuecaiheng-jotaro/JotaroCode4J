@@ -1,0 +1,21 @@
+.cursor/dsh-idea-debug.json
+  s_a06df77ee2692f::t_45ffd732f89850 1
+README.md
+  s_a06df77ee2692f::t_45ffd732f89850 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "6a3b23f3d7c4782506d9a7c40e51cd579936a65a",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
