@@ -1,0 +1,32 @@
+src/test/java/org/jotaro/jotarocode/tui/SingleColumnLineReaderTest.java
+  s_fd3aa6c5ad6a65::t_f78e0e0b158fad 20-22
+  s_fd3aa6c5ad6a65::t_9ee3416a76b0b6 82-84
+  s_fd3aa6c5ad6a65::t_b7347519922d41 214-219
+  s_fd3aa6c5ad6a65::t_50d0d715edad12 271-303
+src/main/java/org/jotaro/jotarocode/tui/SingleColumnLineReader.java
+  s_fd3aa6c5ad6a65::t_e0216e31e3252f 53
+  s_fd3aa6c5ad6a65::t_5bf306aa458dfb 69
+  s_fd3aa6c5ad6a65::t_2aa5e45c4b2158 113-141
+  s_fd3aa6c5ad6a65::t_9c4ea637d21388 161,165-171
+  s_fd3aa6c5ad6a65::t_ecf8fddde2f56e 48
+  s_fd3aa6c5ad6a65::t_497ec0a614f371 6,8,12,14
+  s_fd3aa6c5ad6a65::t_7905aa27b18b9b 61-68,70,74-110
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_fd3aa6c5ad6a65::t_84a604cdce1180 132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "83885fe89b9ff3fade1d11a4ac92a93d2eae872e",
+  "prompts": {},
+  "sessions": {
+    "s_fd3aa6c5ad6a65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2ec3378c-8c12-4b3d-bf7b-b49fac9554e8",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
