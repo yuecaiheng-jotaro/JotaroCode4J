@@ -1,4 +1,5 @@
 # Jotaro Agent
+用java重写pi agent
 
 一个用 Spring AI 写的编程 Agent。网页和终端是两种入口，背后是同一个循环：模型回复一次，循环执行它点名的工具，再把结果送回去，直到它不再要工具。
 
