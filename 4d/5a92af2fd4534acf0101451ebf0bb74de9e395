@@ -1,0 +1,89 @@
+src/main/java/org/jotaro/jotarocode/agent/runtime/RunControl.java
+  s_fd3aa6c5ad6a65::t_b190cde4b51367 13-14,18-31
+src/test/java/org/jotaro/jotarocode/tui/SingleColumnLineReaderTest.java
+  s_fd3aa6c5ad6a65::t_2291c9d49c7c72 1-2,5,10-16,19-21,23-49,93
+  s_fd3aa6c5ad6a65::t_37816479f2e427 3-4,6-9,17-18,22
+  s_fd3aa6c5ad6a65::t_1abf33b0ceb8c7 50-92
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_fd3aa6c5ad6a65::t_990daa9c8493f4 88-103,107-113
+  s_fd3aa6c5ad6a65::t_8e176d7697ab14 45
+  s_fd3aa6c5ad6a65::t_6cfa0c313697e8 150-152
+  s_fd3aa6c5ad6a65::t_3380b9f37a37f8 50-51
+  s_fd3aa6c5ad6a65::t_d0222d837e5973 59
+  s_fd3aa6c5ad6a65::t_610812af8ff46b 53
+  s_fd3aa6c5ad6a65::t_6fc514b18a2a1b 48
+  s_fd3aa6c5ad6a65::t_c5907a0b86f4d8 70-72
+  s_fd3aa6c5ad6a65::t_587c8a5846ea35 36
+  s_fd3aa6c5ad6a65::t_edb196c7c351b1 129
+  s_fd3aa6c5ad6a65::t_5d5a11ba16f6f5 22
+  s_fd3aa6c5ad6a65::t_fbf37c93bd2f33 57
+  s_fd3aa6c5ad6a65::t_b74ba54237dbdb 9
+  s_fd3aa6c5ad6a65::t_146e787c821f5f 35
+  s_fd3aa6c5ad6a65::t_cc2ebe66bf40f2 84-87
+  s_fd3aa6c5ad6a65::t_65e71a02a3b00f 125-126
+  s_fd3aa6c5ad6a65::t_f859f3cd91400c 46-47
+  s_fd3aa6c5ad6a65::t_f27d490e7de8b9 19
+  s_fd3aa6c5ad6a65::t_f8907ac9026f50 20
+  s_fd3aa6c5ad6a65::t_5ca6a5adb074ff 21
+  s_fd3aa6c5ad6a65::t_d750a2a3f71ecd 104-106
+  s_fd3aa6c5ad6a65::t_2e13c761a4336c 127-128
+  s_fd3aa6c5ad6a65::t_410f644e7d9f45 140-144
+src/main/java/org/jotaro/jotarocode/agent/PiAgent.java
+  s_fd3aa6c5ad6a65::t_5cec5fbeded9e6 104-105
+  s_fd3aa6c5ad6a65::t_b60ab892b5f044 23
+  s_fd3aa6c5ad6a65::t_15d3419424d4c1 9
+  s_fd3aa6c5ad6a65::t_de422803a9d7c4 82-83
+  s_fd3aa6c5ad6a65::t_515db4b007c023 158
+  s_fd3aa6c5ad6a65::t_26b5e13c817c3d 174
+  s_fd3aa6c5ad6a65::t_43a4ca020e9ae8 181
+  s_fd3aa6c5ad6a65::t_cba48910580ec9 50
+  s_fd3aa6c5ad6a65::t_1247eac77d0097 114-124,127-128,133-134
+README.md
+  s_fd3aa6c5ad6a65::t_767e11aae5103c 20
+src/test/java/org/jotaro/jotarocode/tui/ToolQuestionnaireTest.java
+  s_fd3aa6c5ad6a65::t_7e31f28333f1c5 1-39
+src/main/resources/application.yaml
+  s_fd3aa6c5ad6a65::t_ffa8c0c016b5f8 33
+src/main/java/org/jotaro/jotarocode/tui/SingleColumnLineReader.java
+  s_fd3aa6c5ad6a65::t_efca1853c48581 3-4,6-7,11,13,15
+  s_fd3aa6c5ad6a65::t_9dc78153a2d248 27-47,49-53,56-60,63-67
+  s_fd3aa6c5ad6a65::t_443cb0ed9a4dc5 1,5,8-10,14,18-19,21-24,68-73
+src/main/java/org/jotaro/jotarocode/config/PiAgentProperties.java
+  s_fd3aa6c5ad6a65::t_599627ab4eb53b 18
+src/main/resources/static/index.html
+  s_fd3aa6c5ad6a65::t_895d669a54e98a 133
+  s_fd3aa6c5ad6a65::t_ea4159911ccca4 15
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoopRequest.java
+  s_fd3aa6c5ad6a65::t_3540fdddc5e043 14
+src/main/java/org/jotaro/jotarocode/tui/ToolQuestionnaire.java
+  s_fd3aa6c5ad6a65::t_74dac5f7e804b1 1-120
+src/test/java/org/jotaro/jotarocode/tui/QuestionGateTest.java
+  s_fd3aa6c5ad6a65::t_4e2625b237e91b 1-94
+src/main/java/org/jotaro/jotarocode/agent/tools/coding/ShellRunner.java
+  s_fd3aa6c5ad6a65::t_d6de32200c8a71 3-4
+  s_fd3aa6c5ad6a65::t_2029399f62542e 89,91-104
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoop.java
+  s_fd3aa6c5ad6a65::t_01e21ae2492df7 36-44
+  s_fd3aa6c5ad6a65::t_98722ab03b4e96 294-305
+src/main/java/org/jotaro/jotarocode/tui/QuestionGate.java
+  s_fd3aa6c5ad6a65::t_997e87997665a8 45,47-49
+  s_fd3aa6c5ad6a65::t_bb7b27a7de23c2 1-28,30,34-36,38-44,46,50-134
+  s_fd3aa6c5ad6a65::t_11d8dfb98d9760 29,31-33
+  s_fd3aa6c5ad6a65::t_12d4bf7b586e18 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "4d5a92af2fd4534acf0101451ebf0bb74de9e395",
+  "prompts": {},
+  "sessions": {
+    "s_fd3aa6c5ad6a65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2ec3378c-8c12-4b3d-bf7b-b49fac9554e8",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
