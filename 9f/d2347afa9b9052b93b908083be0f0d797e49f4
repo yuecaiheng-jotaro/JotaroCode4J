@@ -1,0 +1,45 @@
+src/test/java/org/jotaro/jotarocode/tui/PasteChunksTest.java
+  s_a06df77ee2692f::t_d0a378fff3571f 1-18,20-66
+  s_a06df77ee2692f::t_bb1628a5f369ef 19
+README.md
+  s_a06df77ee2692f::t_29789a39fea71f 101-102
+src/main/java/org/jotaro/jotarocode/agent/PiAgent.java
+  s_a06df77ee2692f::t_665fd80ac7422a 181-188
+  s_a06df77ee2692f::t_b39700e05d46d8 19
+  s_a06df77ee2692f::t_afafaedb51e7c3 209-212,215,220
+  s_a06df77ee2692f::t_0acbcc632c7181 314-319
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_a06df77ee2692f::t_3193c92efc7a28 240-242
+  s_a06df77ee2692f::t_d5ae1cc96f2740 27-28
+  s_a06df77ee2692f::t_2fb3bbcdfea310 120,124,126,131,140
+src/main/java/org/jotaro/jotarocode/tui/SingleColumnLineReader.java
+  s_a06df77ee2692f::t_edbb608319fbe5 44
+  s_a06df77ee2692f::t_fbf18a2bc493a0 62
+  s_a06df77ee2692f::t_f3dbb801eaafa1 152-242
+  s_a06df77ee2692f::t_2c36e80cd41caa 674
+  s_a06df77ee2692f::t_0f832ef136cc68 21-24,29
+src/main/java/org/jotaro/jotarocode/tui/PasteChunks.java
+  s_a06df77ee2692f::t_3ba077333e0c18 1-173
+src/main/java/org/jotaro/jotarocode/tui/ClipboardImages.java
+  s_a06df77ee2692f::t_fbe5aca8494d02 77,81,90,93,96-100
+  s_a06df77ee2692f::t_cfc47dd3468295 1-76,78-80,82-89,91-92,94-95,101-150
+src/test/java/org/jotaro/jotarocode/agent/PiAgentTest.java
+  s_a06df77ee2692f::t_ed32f336358b78 11-12
+  s_a06df77ee2692f::t_1b7019c92eaad1 73-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "9fd2347afa9b9052b93b908083be0f0d797e49f4",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
