@@ -9,6 +9,7 @@ import org.jotaro.jotarocode.agent.runtime.AssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.BeforeToolCallResult;
 import org.jotaro.jotarocode.agent.runtime.PendingMessageQueue;
 import org.jotaro.jotarocode.agent.runtime.RunControl;
+import org.jotaro.jotarocode.agent.runtime.SubagentScope;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.Message;
@@ -81,6 +82,16 @@ public class PiAgent {
     private AssistantStreamer streamer;
 
     /**
+     * 当前会话模型名。子代理没指定模型时跟随它。
+     */
+    private volatile String model;
+
+    /**
+     * 非空时子代理和父代理共用同一个取消开关，这样父代理 abort 能打断子代理的模型流。
+     */
+    private final RunControl sharedControl;
+
+    /**
      * agent运行时线程管理器
      */
     private volatile RunControl runControl = new RunControl();
@@ -94,12 +105,23 @@ public class PiAgent {
                    int maxSteps,
                    int messageWindow,
                    ToolExecutionMode toolExecution) {
+        this(systemPrompt, tools, streamer, maxSteps, messageWindow, toolExecution, null);
+    }
+
+    public PiAgent(String systemPrompt,
+                   List<AgentTool> tools,
+                   AssistantStreamer streamer,
+                   int maxSteps,
+                   int messageWindow,
+                   ToolExecutionMode toolExecution,
+                   RunControl sharedControl) {
         this.systemPrompt = systemPrompt;
         this.tools = List.copyOf(tools == null ? List.of() : tools);
         this.streamer = streamer;
         this.maxSteps = maxSteps;
         this.messageWindow = messageWindow;
         this.toolExecution = toolExecution == null ? ToolExecutionMode.PARALLEL : toolExecution;
+        this.sharedControl = sharedControl;
         if (StringUtils.hasText(systemPrompt)) {
             messages.add(new SystemMessage(systemPrompt));
         }
@@ -115,6 +137,15 @@ public class PiAgent {
                 throw new IllegalStateException("Agent 正在运行，不能切换模型");
             }
             this.streamer = streamer;
+        }
+    }
+
+    public void useModel(String model) {
+        synchronized (runLock) {
+            if (running) {
+                throw new IllegalStateException("Agent 正在运行，不能切换模型");
+            }
+            this.model = model;
         }
     }
 
@@ -169,7 +200,7 @@ public class PiAgent {
             running = true;
             state = AgentState.THINKING;
             messages.add(userMessage(text));
-            runControl = new RunControl();
+            runControl = sharedControl != null ? sharedControl : new RunControl();
             return true;
         }
     }
@@ -194,6 +225,10 @@ public class PiAgent {
     }
 
     private void executeLoop() {
+        SubagentScope.run(new SubagentScope.Context(model, beforeToolCall), this::runLoop);
+    }
+
+    private void runLoop() {
         RunControl control = this.runControl;
         try {
             List<Message> snapshot;

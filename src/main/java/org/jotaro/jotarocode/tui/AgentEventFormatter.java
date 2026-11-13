@@ -8,8 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 把 Agent 事件整理成终端上的一行行文本。流式增量先按换行切分，避免每个 token 独占一行。
- * 思考内容用灰色单独成段，写在正文前面；一行还没结束时，攒满一截也先打出来，避免一直贴在输入框上。
+ * 把 Agent 事件整理成终端上的一行行文本。已经换行的内容立刻成为独立行。
+ * 还没换行的半行留在 {@link #livePlain()}，由终端贴在输入框上方原地刷新。
+ * 思考内容用灰色单独成段，写在正文前面。
  */
 public final class AgentEventFormatter {
 
@@ -67,6 +68,18 @@ public final class AgentEventFormatter {
             lines.add(event.isStepLimitReached() ? "[已达到最大步数]" : "[完成]");
         }
         return lines;
+    }
+
+    /** 当前还没换行的半行。思考进行中时返回思考文本。 */
+    public String livePlain() {
+        if (thinking && !reasoningPending.isEmpty()) {
+            return reasoningPending.toString();
+        }
+        return pending.toString();
+    }
+
+    public boolean liveThinking() {
+        return thinking && !reasoningPending.isEmpty();
     }
 
     private void closeThinking(List<String> lines) {

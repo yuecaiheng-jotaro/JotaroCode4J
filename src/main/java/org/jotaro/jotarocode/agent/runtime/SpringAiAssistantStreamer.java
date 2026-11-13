@@ -71,7 +71,9 @@ public final class SpringAiAssistantStreamer implements AssistantStreamer {
 
         StreamChunkAggregator aggregator = new StreamChunkAggregator();
         try {
+            // stream 开始流式请求
             spec.stream()
+                    // 流式每个resp分片
                     .chatResponse()
                     .doOnSubscribe(runControl::bind)
                     .doFinally(signal -> runControl.unbind())

@@ -96,7 +96,7 @@ sequenceDiagram
 
 ## 终端
 
-空闲提示符是 `◆ jotaro ❯`，运行中变成 `◆ steer ❯`，模型名在行尾。提示符在每次 `readLine` 开始时决定，这一行打字期间不会中途改掉。
+空闲提示符是 `◆ jotaro ❯`，运行中变成 `◆ steer ❯`，模型名在行尾。正在生成的文字显示在输入框上方，中间空一行。运行结束马上切回 `jotaro`，不用再按一次回车。运行中再输入的文字会插进当前轮。
 
 ```mermaid
 flowchart TD
@@ -131,8 +131,11 @@ flowchart TD
 | `find` | 按 glob 找文件，默认最多 1000 条 |
 | `currentTime` | 当前本地时间 |
 | `terminate` | 结束这一轮循环 |
+| `subagent` | 把独立任务交给子代理。单个用 `agent` + `task`；`tasks` 并行，最多 8 个；`chain` 按顺序执行，下一步可用 `{previous}` |
 
 相对路径相对启动时的工作目录。`~` 会展开。`ls`、`grep`、`find` 遵守 `.gitignore`。`write` 和 `edit` 对同一文件串行。
+
+`subagent` 每次调用都会新开一个会话，子代理看不到父对话。内置 `explore` 只有 `read`、`grep`、`find`、`ls`；`general` 使用除 `subagent` 以外的工具。同名 markdown 可以覆盖它们，目录是 `~/.pi/agent/agents/*.md`，以及从工作目录向上找到的最近 `.pi/agents/`。子代理步数上限是 8，模型默认跟随父会话，文件里的 `model` 可以单独指定。父代理在一次回复里发出的多个 `subagent` 调用本身也会并行。
 
 ## 技能
 

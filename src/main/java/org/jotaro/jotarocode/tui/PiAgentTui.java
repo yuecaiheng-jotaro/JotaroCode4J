@@ -1,6 +1,8 @@
 package org.jotaro.jotarocode.tui;
 
 import org.jotaro.jotarocode.agent.PiAgent;
+import org.jotaro.jotarocode.agent.runtime.AgentEvent;
+import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
 import org.jline.reader.EndOfFileException;
@@ -16,8 +18,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 终端里的 Jotaro UI。空闲提示符是 {@code ◆ jotaro ❯}，运行中是 {@code ◆ steer ❯}，这时输入会插进当前轮。模型名显示在行尾。
- * 普通文字用上键回溯已发送的内容，下键向前。行首是 {@code /} 时，上下键在候选里移动，回车选定。
+ * 终端里的 Jotaro UI。空闲提示符是 {@code ◆ jotaro ❯}，运行中是 {@code ◆ steer ❯}，这时输入会插进当前轮。
+ * 正在生成的半行显示在输入框上方，中间空一行；运行结束立刻切回 jotaro，不用再按一次回车。
+ * 模型名显示在行尾。普通文字用上键回溯已发送的内容，下键向前。行首是 {@code /} 时，上下键在候选里移动，回车选定。
  * Ctrl+C 中断当前运行，Ctrl+D 退出。斜杠开头的行是命令，不会发给模型，也不进历史。
  * 执行 bash、powershell、write、edit 之前会发问卷：y 允许这次，a 全部允许，n 拒绝，其他文字当作提示。
  * 输入 {@code /} 后按前缀给出灰色提示。Tab 列出匹配的命令，每条一行；{@code /model} 后再补全模型名。
@@ -34,8 +37,12 @@ public final class PiAgentTui {
         return thread;
     });
     private volatile boolean stopped;
+    private volatile boolean showingRun;
+    private volatile String activity = "正在回复";
     private volatile Thread runThread;
+    private final Object screen = new Object();
     private QuestionGate questions;
+    private SingleColumnLineReader reader;
 
     public PiAgentTui(PiAgent agent, ChatClientRegistry registry, String model) {
         this.agent = agent;
@@ -45,19 +52,19 @@ public final class PiAgentTui {
 
     public void run() throws Exception {
         Terminal terminal = TerminalBuilder.builder().system(true).dumb(true).build();
-        SingleColumnLineReader reader = new SingleColumnLineReader(terminal);
+        reader = new SingleColumnLineReader(terminal);
         reader.setCompleter(new SlashCommandCompleter(() -> registry.keys().stream().sorted().toList()));
         reader.setHistory(new DefaultHistory());
         reader.installInteractionKeys();
         reader.setAutosuggestion(LineReader.SuggestionType.COMPLETER);
         questions = new QuestionGate(lines -> printLines(reader, lines));
         agent.setBeforeToolCall(questions::beforeCall);
-        agent.subscribe(event -> printLines(reader, formatter.format(event)));
+        agent.subscribe(this::onEvent);
         printLines(reader, List.of(PromptStyle.banner()));
         while (!stopped) {
             String line;
             try {
-                line = reader.readLine(PromptStyle.left(agent.isRunning()), PromptStyle.right(model), (Character) null, null);
+                line = reader.readLine(currentFrame(), PromptStyle.right(model), (Character) null, null);
             } catch (UserInterruptException exception) {
                 interruptRun(reader);
                 continue;
@@ -88,6 +95,12 @@ public final class PiAgentTui {
             questions.answer(line);
             return;
         }
+        if (agent.isRunning()) {
+            agent.prompt(line);
+            return;
+        }
+        showingRun = true;
+        activity = "正在回复";
         executor.submit(() -> {
             runThread = Thread.currentThread();
             try {
@@ -97,8 +110,43 @@ public final class PiAgentTui {
                 if (runThread == Thread.currentThread()) {
                     runThread = null;
                 }
+                synchronized (screen) {
+                    showingRun = false;
+                    activity = "正在回复";
+                    paint(List.of());
+                }
             }
         });
+    }
+
+    private void onEvent(AgentEvent event) {
+        synchronized (screen) {
+            if (event.getType() == AgentEventType.TOOL_EXECUTION_START) {
+                activity = "正在执行 " + (event.getToolName() == null ? "工具" : event.getToolName());
+            } else if (event.getType() == AgentEventType.MESSAGE_UPDATE
+                    || event.getType() == AgentEventType.TOOL_EXECUTION_END
+                    || event.getType() == AgentEventType.TURN_START) {
+                activity = "正在回复";
+            }
+            paint(formatter.format(event));
+        }
+    }
+
+    private void paint(List<String> lines) {
+        if (reader == null) {
+            return;
+        }
+        boolean running = showingRun || agent.isRunning();
+        String live = PromptStyle.tail(formatter.livePlain(), reader.columns());
+        reader.present(lines, PromptStyle.frame(running, live, formatter.liveThinking(), activity), PromptStyle.right(model));
+    }
+
+    private String currentFrame() {
+        synchronized (screen) {
+            boolean running = showingRun || agent.isRunning();
+            String live = reader == null ? "" : PromptStyle.tail(formatter.livePlain(), reader.columns());
+            return PromptStyle.frame(running, live, formatter.liveThinking(), activity).replace("%", "%%");
+        }
     }
 
     private void interruptRun(LineReader reader) {
@@ -181,6 +229,7 @@ public final class PiAgentTui {
         }
         try {
             agent.useStreamer(new SpringAiAssistantStreamer(chatClient));
+            agent.useModel(model);
             this.model = model;
             printLines(reader, List.of("已切换到 " + model));
         } catch (IllegalStateException exception) {

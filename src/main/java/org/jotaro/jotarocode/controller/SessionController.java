@@ -29,6 +29,7 @@ public class SessionController {
 
     @Resource
     private AgentSessionService agentSessionService;
+
     @Resource
     private SkillCatalog skillCatalog;
 

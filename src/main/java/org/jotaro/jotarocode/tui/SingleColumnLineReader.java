@@ -19,6 +19,7 @@ import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -489,6 +490,42 @@ final class SingleColumnLineReader extends LineReaderImpl {
             showList(slashChoices.get(slashIndex));
         }
         return super.getDisplayedBufferWithPrompts(secondaryPrompts);
+    }
+
+    /**
+     * 把已经完成的行写到滚动区，并立刻重画提示符。读行还没开始时只把完成的行打出来。
+     * 提示符可以是多行：上面是正在生成的半行，下面才是输入。
+     */
+    void present(List<String> lines, String promptText, String rightPromptText) {
+        lock.lock();
+        try {
+            if (!reading || display == null) {
+                for (String line : lines) {
+                    terminal.writer().println(line == null ? "" : line);
+                }
+                if (!lines.isEmpty()) {
+                    terminal.flush();
+                }
+                return;
+            }
+            if (!lines.isEmpty()) {
+                display.update(Collections.emptyList(), 0);
+                for (String line : lines) {
+                    terminal.writer().println(line == null ? "" : line);
+                }
+            }
+            this.prompt = AttributedString.fromAnsi(promptText == null ? "" : promptText);
+            setRightPrompt(rightPromptText);
+            redisplay(false);
+            terminal.flush();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    int columns() {
+        int width = terminal.getWidth();
+        return width > 0 ? width : 80;
     }
 
     AttributedString paint() {

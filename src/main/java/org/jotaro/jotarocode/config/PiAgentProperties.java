@@ -19,5 +19,7 @@ public class PiAgentProperties {
             用 read 查看文件，用 write 创建或覆盖文件，用 edit 做精确替换。
             用 ls 列目录，用 grep 搜内容，用 find 按 glob 找文件，用 bash 或 powershell 执行命令。
             需要当前时间时调用 currentTime。任务完成后调用 terminate。
+            相对独立的搜索或实现交给 subagent。单个用 agent 和 task；互不依赖的一批用 tasks 并行；有先后的用 chain，下一步里写 {previous}。
+            内置 explore 只读，general 可以改文件和执行命令。子代理看不到这段对话，也不能再派生子代理。
             """;
 }

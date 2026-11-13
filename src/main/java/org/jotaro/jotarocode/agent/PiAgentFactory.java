@@ -4,6 +4,7 @@ import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.CallbackAgentTool;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
+import org.jotaro.jotarocode.agent.tools.SubagentTool;
 import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
 import org.jotaro.jotarocode.config.PiAgentProperties;
@@ -41,6 +42,14 @@ public class PiAgentFactory {
     @PostConstruct
     void registerTools() {
         this.tools = adaptTools(contributors);
+        if (contributors == null) {
+            return;
+        }
+        for (ToolContributor contributor : contributors) {
+            if (contributor instanceof SubagentTool subagentTool) {
+                subagentTool.bind(tools);
+            }
+        }
     }
 
     public PiAgent create(String model, String systemPrompt) {
@@ -54,7 +63,7 @@ public class PiAgentFactory {
         if (chatClient == null) {
             throw new BizException("未找到模型: " + resolvedModel);
         }
-        return new PiAgent(
+        PiAgent agent = new PiAgent(
                 resolvedPrompt,
                 tools,
                 new SpringAiAssistantStreamer(chatClient),
@@ -62,6 +71,8 @@ public class PiAgentFactory {
                 properties.getMessageWindow(),
                 ToolExecutionMode.PARALLEL
         );
+        agent.useModel(resolvedModel);
+        return agent;
     }
 
     /**
@@ -72,6 +83,7 @@ public class PiAgentFactory {
         if (contributors == null || contributors.isEmpty()) {
             return List.of();
         }
+        // ToolCallbacks 去扫@Tool的方法，装载成ToolCallback
         ToolCallback[] callbacks = ToolCallbacks.from(contributors.toArray());
         List<AgentTool> agentTools = new ArrayList<>();
         for (ToolCallback callback : callbacks) {
@@ -96,6 +108,7 @@ public class PiAgentFactory {
         }
         try {
             agent.useStreamer(new SpringAiAssistantStreamer(chatClient));
+            agent.useModel(resolvedModel);
         } catch (IllegalStateException exception) {
             throw new BizException(exception.getMessage());
         }

@@ -75,7 +75,8 @@ public final class AgentLoop {
 
                 // 处理完当前turn，内部存置loop的列表里
                 messages.add(turn.getMessage());
-                // hook 留置位
+
+                // 【hook-2】llm 推理结束
                 emit(AgentEvent.builder()
                         .type(AgentEventType.MESSAGE_END)
                         .message(turn.getMessage())
@@ -303,8 +304,9 @@ public final class AgentLoop {
 
     private List<ToolOutcome> executeParallel(List<PreparedCall> prepared) {
         List<CompletableFuture<ToolOutcome>> futures = new ArrayList<>();
+        SubagentScope.Context scope = SubagentScope.current();
         for (PreparedCall call : prepared) {
-            futures.add(CompletableFuture.supplyAsync(() -> {
+            futures.add(CompletableFuture.supplyAsync(() -> SubagentScope.call(scope, () -> {
                 RunControl previous = RunControl.install(control);
                 try {
                     if (control.isAborted()) {
@@ -318,7 +320,7 @@ public final class AgentLoop {
                 } finally {
                     RunControl.install(previous);
                 }
-            }));
+            })));
         }
         List<ToolOutcome> outcomes = new ArrayList<>();
         for (CompletableFuture<ToolOutcome> future : futures) {

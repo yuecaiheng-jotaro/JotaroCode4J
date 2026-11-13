@@ -25,6 +25,18 @@ class AgentEventFormatterTest {
                 .build()));
 
         assertEquals(List.of("你好", "世界！"), lines);
+        assertEquals("", formatter.livePlain());
+    }
+
+    @Test
+    void keepsAnUnfinishedLineAboveTheInput() {
+        AgentEventFormatter formatter = new AgentEventFormatter();
+
+        assertEquals(List.of(), formatter.format(update("你好")));
+        assertEquals("你好", formatter.livePlain());
+        assertEquals(false, formatter.liveThinking());
+        assertEquals(List.of("你好"), formatter.format(update("\n")));
+        assertEquals("", formatter.livePlain());
     }
 
     @Test

@@ -39,6 +39,10 @@ public final class RunControl {
         return previous;
     }
 
+    public static RunControl current() {
+        return CURRENT.get();
+    }
+
     public void abort() {
         aborted.set(true);
         Subscription current = subscription.get();
