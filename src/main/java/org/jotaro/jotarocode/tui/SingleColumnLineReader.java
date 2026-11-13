@@ -18,10 +18,15 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 
+import org.springframework.ai.content.Media;
+import org.springframework.core.io.FileSystemResource;
+
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 补全候选按一列往下排。JLine 默认按终端宽度把短名字横着铺开，
@@ -36,6 +41,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
     private String slashDraft = "";
     private int slashDraftCursor;
     private String footerText = "";
+    private final PasteChunks pastes = new PasteChunks();
 
     SingleColumnLineReader(Terminal terminal) {
         super(terminal, "pi-agent", new HashMap<>());
@@ -53,6 +59,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
     void installInteractionKeys() {
         getWidgets().put("jotaro-interrupt", this::interruptLine);
         getWidgets().put("jotaro-quit", this::forceQuit);
+        getWidgets().put("jotaro-paste", this::pasteClipboard);
         getWidgets().put("jotaro-cancel", this::cancelSlashSelection);
         getWidgets().put("jotaro-up", () -> moveSlash(false));
         getWidgets().put("jotaro-down", () -> moveSlash(true));
@@ -140,6 +147,97 @@ final class SingleColumnLineReader extends LineReaderImpl {
         } catch (RuntimeException exception) {
             // 恢复失败也要退出，避免停在原始模式里
         }
+    }
+
+    /**
+     * 终端把 Cmd+V 的文字包在括号粘贴里送来。过长的收成一行摘要，图片路径收成图片摘要。
+     * 空粘贴再看一眼剪贴板，有些终端贴图片时不会带正文。
+     */
+    @Override
+    public boolean beginPaste() {
+        String raw = doReadStringUntil(BRACKETED_PASTE_END);
+        regionActive = RegionType.PASTE;
+        regionMark = buf.cursor();
+        String text = raw.replace('\r', '\n');
+        if (text.isBlank()) {
+            writeClipboardImage();
+            return true;
+        }
+        String trimmed = text.trim();
+        if (!trimmed.contains("\n") && PasteChunks.isImageFile(trimmed)) {
+            buf.write(pastes.image(Path.of(trimmed)));
+            return true;
+        }
+        buf.write(pastes.text(text));
+        return true;
+    }
+
+    /** Ctrl+V。终端不会把图片放进括号粘贴，这里直接读剪贴板。 */
+    private boolean pasteClipboard() {
+        if (writeClipboardImage()) {
+            return true;
+        }
+        String text = ClipboardImages.text();
+        if (text.isEmpty()) {
+            return true;
+        }
+        buf.write(pastes.text(text));
+        return true;
+    }
+
+    private boolean writeClipboardImage() {
+        Optional<Path> image = ClipboardImages.image();
+        if (image.isEmpty()) {
+            return false;
+        }
+        buf.write(pastes.image(image.get()));
+        return true;
+    }
+
+    boolean containsPaste(String line) {
+        return pastes.contains(line);
+    }
+
+    /** 输入框里仍是摘要。发给模型的是展开后的正文和图片。 */
+    PasteChunks.Expanded expandPaste(String line) {
+        return pastes.expand(line);
+    }
+
+    List<Media> mediaOf(PasteChunks.Expanded expanded) {
+        List<Media> media = new ArrayList<>();
+        for (Path path : expanded.images()) {
+            var mime = PasteChunks.mime(path);
+            if (mime != null) {
+                media.add(new Media(mime, new FileSystemResource(path)));
+            }
+        }
+        return media;
+    }
+
+    @Override
+    protected boolean backwardDeleteChar() {
+        if (count == 1 && deletePaste(buf.cursor() - 1)) {
+            return true;
+        }
+        return super.backwardDeleteChar();
+    }
+
+    @Override
+    protected boolean deleteChar() {
+        if (count == 1 && deletePaste(buf.cursor())) {
+            return true;
+        }
+        return super.deleteChar();
+    }
+
+    private boolean deletePaste(int index) {
+        PasteChunks.Span span = pastes.covering(buf.toString(), index);
+        if (span == null) {
+            return false;
+        }
+        buf.cursor(span.start());
+        buf.delete(span.label().length());
+        return true;
     }
 
     private boolean interruptLine() {
@@ -573,6 +671,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
                 "\u001b[B", "\u001bOB", KeyMap.key(getTerminal(), InfoCmp.Capability.key_down));
         bind(map, "jotaro-accept", "\r", "\n");
         bind(map, "jotaro-cancel", "\u001b");
+        bind(map, "jotaro-paste", KeyMap.ctrl('V'));
         map.bind(new Reference("jotaro-interrupt"), KeyMap.ctrl('C'));
     }
 

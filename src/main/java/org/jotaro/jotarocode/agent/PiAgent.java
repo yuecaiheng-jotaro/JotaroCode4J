@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -177,7 +178,14 @@ public class PiAgent {
      * 空闲时开始一轮。运行中则把文本放进 steering 队列。
      */
     public void prompt(String text) {
-        if (!beginRun(text, false)) {
+        prompt(text, List.of());
+    }
+
+    /**
+     * 同 {@link #prompt(String)}，附带粘贴进来的图片。文字模型会忽略图片，多模态模型能看到。
+     */
+    public void prompt(String text, List<Media> media) {
+        if (!beginRun(userMessage(text, media), false)) {
             return;
         }
         executeLoop();
@@ -198,14 +206,18 @@ public class PiAgent {
      * @return false 表示这次文本只是插进了正在跑的队列
      */
     private boolean beginRun(String text, boolean followUp) {
+        return beginRun(userMessage(text, List.of()), followUp);
+    }
+
+    private boolean beginRun(UserMessage message, boolean followUp) {
         synchronized (runLock) {
             if (running) {
-                (followUp ? followUpQueue : steeringQueue).enqueue(userMessage(text));
+                (followUp ? followUpQueue : steeringQueue).enqueue(message);
                 return false;
             }
             running = true;
             state = AgentState.THINKING;
-            messages.add(userMessage(text));
+            messages.add(message);
             runControl = sharedControl != null ? sharedControl : new RunControl();
             return true;
         }
@@ -299,7 +311,11 @@ public class PiAgent {
 
     }
 
-    private static UserMessage userMessage(String text) {
-        return new UserMessage(text == null ? "" : text);
+    private static UserMessage userMessage(String text, List<Media> media) {
+        String body = text == null ? "" : text;
+        if (media == null || media.isEmpty()) {
+            return new UserMessage(body);
+        }
+        return UserMessage.builder().text(body).media(media).build();
     }
 }

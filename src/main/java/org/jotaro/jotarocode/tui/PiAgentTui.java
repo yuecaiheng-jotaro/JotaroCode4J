@@ -24,7 +24,8 @@ import java.util.concurrent.TimeUnit;
  * 正在生成的文字和子代理的当前动作显示在框上方。子代理按嵌套块展开，而不是等结束再吐出整段结果。
  * 运行结束立刻切回 jotaro。运行中再输入会插进当前轮。
  * 普通文字用上键回溯已发送的内容，下键向前。行首是 {@code /} 时，上下键在候选里移动，回车选定。
- * Ctrl+C 中断当前运行，Ctrl+D 退出。斜杠开头的行是命令，不会发给模型，也不进历史。
+ * Ctrl+C 中断当前运行，Ctrl+D 退出。Ctrl+V 粘贴图片或剪贴板文字。斜杠开头的行是命令，不会发给模型，也不进历史。
+ * 粘贴超过 5 行或 800 字时，输入框只留一行摘要，发给模型的仍是全文。
  * 执行 bash、powershell、write、edit 之前会发问卷：y 允许这次，a 全部允许，n 拒绝，其他文字当作提示。
  * 输入 {@code /} 后按前缀给出灰色提示。Tab 列出匹配的命令，每条一行；{@code /model} 后再补全模型名。
  */
@@ -116,17 +117,18 @@ public final class PiAgentTui {
         if (line.isEmpty()) {
             return;
         }
-        if (line.startsWith("/")) {
+        if (line.startsWith("/") && !this.reader.containsPaste(line)) {
             handleCommand(reader, line);
             return;
         }
+        PasteChunks.Expanded expanded = this.reader.expandPaste(line);
         if (questions != null && questions.isWaiting()) {
-            questions.answer(line);
+            questions.answer(expanded.text());
             return;
         }
         if (agent.isRunning()) {
             printLines(reader, List.of(PromptStyle.user(line), PromptStyle.dim("  插入当前回复")));
-            agent.prompt(line);
+            agent.prompt(expanded.text(), this.reader.mediaOf(expanded));
             return;
         }
         printLines(reader, List.of(PromptStyle.user(line)));
@@ -135,7 +137,7 @@ public final class PiAgentTui {
         executor.submit(() -> {
             runThread = Thread.currentThread();
             try {
-                agent.prompt(line);
+                agent.prompt(expanded.text(), this.reader.mediaOf(expanded));
             } finally {
                 Thread.interrupted();
                 if (runThread == Thread.currentThread()) {
@@ -235,7 +237,9 @@ public final class PiAgentTui {
                     "问卷            bash、powershell、write、edit 执行前询问",
                     "y / a / n       允许这次 / 全部允许 / 拒绝。其他文字当作提示",
                     "Tab             按前缀补全，候选每条一行。灰色提示用 → 或 Ctrl+E 接受",
-                    "普通文本        空闲时开始一轮，运行中作为 steering 插入"
+                    "普通文本        空闲时开始一轮，运行中作为 steering 插入",
+                    "粘贴            超过 5 行或 800 字收成 [Pasted text #1 +N lines]，发给模型的是全文",
+                    "Ctrl+V          粘贴图片，输入框显示 [Image #1]。Cmd+V 仍粘贴文字"
             ));
             return;
         }

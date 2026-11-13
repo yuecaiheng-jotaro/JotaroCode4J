@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
+import org.springframework.core.io.ByteArrayResource;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -66,6 +68,20 @@ class PiAgentTest {
 
         assertEquals(2, calls.get());
         assertEquals("second", agent.getMessages().get(agent.getMessages().size() - 1).getText());
+    }
+
+    @Test
+    void promptKeepsAPastedImageOnTheUserMessage() {
+        Media image = new Media(Media.Format.IMAGE_PNG, new ByteArrayResource(new byte[]{1, 2, 3}));
+        PiAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) ->
+                AssistantTurn.of(new AssistantMessage("看到了"), StopReason.STOP));
+
+        agent.prompt("请看附图。", List.of(image));
+
+        UserMessage user = (UserMessage) agent.getMessages().get(1);
+        assertEquals("请看附图。", user.getText());
+        assertEquals(1, user.getMedia().size());
+        assertEquals(Media.Format.IMAGE_PNG, user.getMedia().get(0).getMimeType());
     }
 
     private static PiAgent agent(org.jotaro.jotarocode.agent.runtime.AssistantStreamer streamer) {
