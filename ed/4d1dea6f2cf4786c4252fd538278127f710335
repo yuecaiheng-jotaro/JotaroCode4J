@@ -1,0 +1,143 @@
+agent/src/test/java/org/jotaro/jotarocode/tui/ToolQuestionnaireTest.java
+  s_a06df77ee2692f::t_8380ddf1d1f8c0 24-33
+rag/src/main/java/org/jotaro/rag/index/KnowledgeService.java
+  s_a06df77ee2692f::t_5202e53944c503 322-337
+  s_a06df77ee2692f::t_1aa1a17a0a957e 348-349
+  s_a06df77ee2692f::t_434091e1e15af6 380-381,394-395
+  s_a06df77ee2692f::t_2044f41396e31a 143-144,149-152,154-155,159,165-172,178
+  s_a06df77ee2692f::t_17d2188c6eea95 404-413
+  s_a06df77ee2692f::t_0b6e5351ca54ca 187-188,195-199
+  s_a06df77ee2692f::t_67bad05867d8e5 226,228,231-232,236-239
+  s_a06df77ee2692f::t_72fadf4708535b 119-120
+  s_a06df77ee2692f::t_da82235007db13 252-253
+  s_a06df77ee2692f::t_312b6368368ab5 205-209
+  s_a06df77ee2692f::t_a7c0ca9cf63e53 29-30
+  s_a06df77ee2692f::t_cfe591b5d66bcd 104
+  s_a06df77ee2692f::t_8da964548baba1 13,17,21-28,31-35,47-49,56-58,81-91,93,100-103,105-118,121-142,145-148,153,156-158,164,177,193-194,200-204,210-225,227,229-230,233-235,240-251,254-256,279-289,292-294,299-305,307-321,341-347,350-352,370-379,382-393,396-401,416
+  s_a06df77ee2692f::t_e9572bb128bbc1 290-291,296
+agent/src/main/java/org/jotaro/jotarocode/mcp/McpToolNames.java
+  s_a06df77ee2692f::t_9882cb6e4e729c 1-69
+rag/src/main/java/org/jotaro/rag/index/Chunker.java
+  s_a06df77ee2692f::t_d5048372b77cd1 72-124
+  s_a06df77ee2692f::t_e181e46da31ace 6
+  s_a06df77ee2692f::t_ca54a3d6c0b45b 21-28
+agent/src/main/java/org/jotaro/jotarocode/tui/JotaroAgentTuiRunner.java
+  s_a06df77ee2692f::t_b587800819ad9d 28
+agent/src/main/java/org/jotaro/jotarocode/mcp/McpToolPrefix.java
+  s_a06df77ee2692f::t_f855163bbeb1a1 32-35
+  s_a06df77ee2692f::t_b79a15a367b939 1-31,36-54
+rag/src/main/java/org/jotaro/rag/retrieval/RetrievalStage.java
+  s_a06df77ee2692f::t_a567da1ef3d906 1-16
+rag/src/main/java/org/jotaro/rag/retrieval/postgres/PostgresRetriever.java
+  s_a06df77ee2692f::t_b097a0d72ccc75 75-88,93-105,108,110,115,118,122
+  s_a06df77ee2692f::t_8d90edbb99808c 7
+rag/src/test/java/org/jotaro/rag/index/KnowledgeSearchTest.java
+  s_a06df77ee2692f::t_687881ec0efd6c 53-63,65-77
+  s_a06df77ee2692f::t_60c83a968eae3a 78-91
+  s_a06df77ee2692f::t_e4327ade64a84c 7
+  s_a06df77ee2692f::t_34740793794f69 41-46
+  s_a06df77ee2692f::t_82993b35149c26 64
+  s_a06df77ee2692f::t_337221049ebe68 101-107
+agent/src/main/java/org/jotaro/jotarocode/agent/JotaroAgentFactory.java
+  s_a06df77ee2692f::t_deff329f9e367d 3
+  s_a06df77ee2692f::t_f43805b98dcdb1 131-154
+  s_a06df77ee2692f::t_bc80dc1c1e7cd0 34
+  s_a06df77ee2692f::t_70591c2603b2bd 13,17,25-26,28
+  s_a06df77ee2692f::t_a109e17168b20a 91-93
+  s_a06df77ee2692f::t_644b4a12278651 55-57
+  s_a06df77ee2692f::t_8fe97705ec763b 46-47,49,54,58,69-81
+  s_a06df77ee2692f::t_56028c0dfa39ee 94-97
+agent/src/main/java/org/jotaro/jotarocode/tui/ToolQuestionnaire.java
+  s_a06df77ee2692f::t_dd510dca7a13d1 7
+  s_a06df77ee2692f::t_5539d747d5b2aa 27-30,32
+  s_a06df77ee2692f::t_30223f3f08546e 20
+agent/src/main/resources/application.yaml
+  s_a06df77ee2692f::t_0b2eb6b2449fd9 37,40-42
+  s_a06df77ee2692f::t_15e292e3a77de4 9-15,18-36
+  s_a06df77ee2692f::t_90f34f67fa5b68 16-17
+  s_a06df77ee2692f::t_24eeedf98d84a8 38-39,43-44
+README.md
+  s_a06df77ee2692f::t_de8a7a19c79579 308
+  s_a06df77ee2692f::t_25a37740f41b67 189
+  s_a06df77ee2692f::t_3146b80190b68f 142
+  s_a06df77ee2692f::t_fce70352fab780 159
+  s_a06df77ee2692f::t_b5642d6322da93 190
+  s_a06df77ee2692f::t_0a400800636c37 202,206-221
+rag/src/test/java/org/jotaro/rag/index/ChunkerTest.java
+  s_a06df77ee2692f::t_4f0416fe41a7f2 21-28
+rag/src/main/resources/static/index.html
+  s_a06df77ee2692f::t_2b4e9c3752f20e 526-528
+  s_a06df77ee2692f::t_8607e686ffd449 6,8-37,39-141,143-149,151-176,196-223,225,227-237,241-260,262-294,302-304,308-352,356-363,373-395,398-401,405,407-429,434,436-455,457,460-462,486-489,493-499,501-524,530-534,537-541,549,551,556-559,562-574,578,581-582,584,586-591,593,595-596,599-607,611-618,620-622,624-641,645-663,674,676,679-680,683-710,712-758,762,764,766,768,772-774,776-780,788-796,798
+  s_a06df77ee2692f::t_c51da011426b0a 787
+  s_a06df77ee2692f::t_3c2f191887b383 677
+  s_a06df77ee2692f::t_dbbd4b1e6fff9f 711
+  s_a06df77ee2692f::t_0171f9e6d73366 38
+  s_a06df77ee2692f::t_20504347868411 775,781-786
+  s_a06df77ee2692f::t_0472ea0d1b59b3 664-673,678,681-682
+  s_a06df77ee2692f::t_13b1b430734813 797
+  s_a06df77ee2692f::t_8391d40ad059ba 470-477,481
+  s_a06df77ee2692f::t_59998124835614 224,226
+  s_a06df77ee2692f::t_5d992e8f8dc407 295-301,305-307
+  s_a06df77ee2692f::t_6cb01f632d1bee 675
+  s_a06df77ee2692f::t_9680e380bcb8c4 619
+  s_a06df77ee2692f::t_698bdf268559a6 177-195
+  s_a06df77ee2692f::t_9ffadac47d1c9b 500
+  s_a06df77ee2692f::t_22941ce3fe252c 594,597-598
+  s_a06df77ee2692f::t_e8fa3a7a8666bc 150
+  s_a06df77ee2692f::t_466b0dccf9a19e 623
+  s_a06df77ee2692f::t_8554aca7bd82bc 542-548
+  s_a06df77ee2692f::t_944156a65e60e1 456,458-459,463-469,478-480,482-485,490-492
+  s_a06df77ee2692f::t_906d67b317254c 642-644
+  s_a06df77ee2692f::t_8173fbc96d8e08 142
+agent/pom.xml
+  s_a06df77ee2692f::t_ec25ded3cbd804 50-52
+agent/src/test/java/org/jotaro/jotarocode/mcp/McpToolNamesTest.java
+  s_a06df77ee2692f::t_4f9e473d3f5e49 1-20
+rag/src/main/resources/schema.sql
+  s_a06df77ee2692f::t_204b7a298ba888 16-18,24-27
+  s_a06df77ee2692f::t_d676582249dc45 28-29
+  s_a06df77ee2692f::t_b01219b78955da 19-20
+agent/src/main/java/org/jotaro/jotarocode/agent/tools/RagTool.java
+  s_a06df77ee2692f::t_8a5894bf08da9e 4,6
+  s_a06df77ee2692f::t_0267b08597028d 16-17,29-33
+  s_a06df77ee2692f::t_e7bf338ffb769e 21-23,27
+agent/src/main/java/org/jotaro/jotarocode/agent/rag/RagBases.java
+  s_a06df77ee2692f::t_a6399c4e8951ed 7,10-11,19-22,29-34,37-39,41,45,55-58,60,66-67,71-78
+  s_a06df77ee2692f::t_85351507797fb6 1-6,8-9,12-18,23-28,35-36,40,42-44,46-54,59,61-65,68-70,79-93
+rag/src/main/java/org/jotaro/rag/web/RagController.java
+  s_a06df77ee2692f::t_bcd5c32ce1d7e3 76
+  s_a06df77ee2692f::t_62efee797eb4e3 41-45,51-53,64-65,74-75,77-78,81-90,94,96,103-104
+  s_a06df77ee2692f::t_7f7190c4a2f581 58-61,66
+  s_a06df77ee2692f::t_d862c323758597 102,105-108
+agent/src/main/java/org/jotaro/jotarocode/config/JotaroAgentProperties.java
+  s_a06df77ee2692f::t_f90380a5ccfcfe 34
+  s_a06df77ee2692f::t_bb09f027f5ecd6 35-41
+  s_a06df77ee2692f::t_1a2a6e4d089a15 6-8
+agent/src/main/java/org/jotaro/jotarocode/mcp/McpToolCatalog.java
+  s_a06df77ee2692f::t_fbc925a1e7ce31 1-44
+agent/src/test/java/org/jotaro/jotarocode/agent/rag/RagBasesTest.java
+  s_a06df77ee2692f::t_2aa2608dabde21 15,17-19,21-30
+  s_a06df77ee2692f::t_ba5f2078f9a5ba 1-14,16,20,31-60
+rag/src/main/java/org/jotaro/rag/retrieval/Retriever.java
+  s_a06df77ee2692f::t_67303cff833e5c 16-26
+rag/src/main/java/org/jotaro/rag/retrieval/HybridSearch.java
+  s_a06df77ee2692f::t_abd4ae85b81dff 9
+  s_a06df77ee2692f::t_a0e4a5b9f44ff6 37-69
+  s_a06df77ee2692f::t_d23f0d6c4d6f3f 80-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "ed4d1dea6f2cf4786c4252fd538278127f710335",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
