@@ -1,0 +1,86 @@
+pom.xml
+  s_a06df77ee2692f::t_bb3d2c62240669 12,15
+agent/src/main/java/org/jotaro/jotarocode/agent/tools/SubagentTool.java
+  s_a06df77ee2692f::t_bb3d2c62240669 9,30
+agent/src/test/java/org/jotaro/jotarocode/agent/tools/coding/CodingToolsTest.java
+  s_a06df77ee2692f::t_2934e8e0c25348 124
+agent/src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoop.java
+  s_a06df77ee2692f::t_bb3d2c62240669 16
+agent/src/main/java/org/jotaro/jotarocode/tui/SingleColumnLineReader.java
+  s_a06df77ee2692f::t_bb3d2c62240669 47
+agent/src/main/java/org/jotaro/jotarocode/agent/JotaroAgentFactory.java
+  s_a06df77ee2692f::t_bb3d2c62240669 10,25,29,36,55,66,103
+agent/src/main/java/org/jotaro/jotarocode/agent/subagent/SubagentRunner.java
+  s_a06df77ee2692f::t_bb3d2c62240669 4,28,110,162
+  s_f2f7eba998c4e9::t_02ffd2249dcc61 161
+agent/src/main/java/org/jotaro/jotarocode/agent/tools/coding/PowerShellTool.java
+  s_a06df77ee2692f::t_bb3d2c62240669 43
+agent/src/test/java/org/jotaro/jotarocode/JotaroAgentApplicationTest.java
+  s_a06df77ee2692f::t_bb3d2c62240669 7,13,19
+agent/src/main/java/org/jotaro/jotarocode/agent/subagent/SubagentCatalog.java
+  s_a06df77ee2692f::t_bb3d2c62240669 20,93-94
+README.md
+  s_f2f7eba998c4e9::t_04e6d19e8f8747 9,30,100,162,194
+  s_a06df77ee2692f::t_2d081d946d866f 79-83,89-99,101-104
+  s_a06df77ee2692f::t_bb3d2c62240669 218,220,284,288-292
+  s_f2f7eba998c4e9::t_befde3a2e2fc13 1-5,7,11,18,22-24,26-29,142-146,166-172,174-188,190,193,196,208
+  s_f2f7eba998c4e9::t_02ffd2249dcc61 34,37-38,49,137
+agent/src/main/java/org/jotaro/jotarocode/config/JotaroAgentProperties.java
+  s_a06df77ee2692f::t_bb3d2c62240669 7,11-12
+agent/src/main/java/org/jotaro/jotarocode/tui/JotaroAgentTuiRunner.java
+  s_a06df77ee2692f::t_bb3d2c62240669 3-4,6,13,16-17,20,24,28-29
+rag/src/main/java/org/jotaro/rag/RagApplication.java
+  s_f2f7eba998c4e9::t_02ffd2249dcc61 8
+agent/src/test/java/org/jotaro/jotarocode/agent/JotaroAgentTest.java
+  s_a06df77ee2692f::t_bb3d2c62240669 23,27,45,76,87-88
+agent/src/main/java/org/jotaro/jotarocode/agent/tools/coding/BashTool.java
+  s_a06df77ee2692f::t_bb3d2c62240669 30
+agent/src/main/java/org/jotaro/jotarocode/config/AsyncConfig.java
+  s_a06df77ee2692f::t_bb3d2c62240669 24
+agent/src/test/java/org/jotaro/jotarocode/agent/subagent/SubagentCatalogTest.java
+  s_a06df77ee2692f::t_bb3d2c62240669 34,75,78
+agent/src/main/java/org/jotaro/jotarocode/skill/SkillCatalog.java
+  s_a06df77ee2692f::t_bb3d2c62240669 21-22,88,93
+rag/pom.xml
+  s_a06df77ee2692f::t_bb3d2c62240669 7
+agent/src/main/java/org/jotaro/jotarocode/JotaroAgentApplication.java
+  s_a06df77ee2692f::t_bb3d2c62240669 3,14,20,34,39,45
+agent/src/main/java/org/jotaro/jotarocode/service/impl/AgentSessionServiceImpl.java
+  s_a06df77ee2692f::t_bb3d2c62240669 3-4,38,45,50,52,78,96,101,106,111,127-128
+agent/pom.xml
+  s_a06df77ee2692f::t_bb3d2c62240669 7,12
+agent/src/main/java/org/jotaro/jotarocode/agent/runtime/package-info.java
+  s_a06df77ee2692f::t_bb3d2c62240669 2
+agent/src/main/java/org/jotaro/jotarocode/tui/JotaroAgentTui.java
+  s_a06df77ee2692f::t_bb3d2c62240669 3,32,36,43,48,61
+agent/src/main/java/org/jotaro/jotarocode/agent/JotaroAgent.java
+  s_a06df77ee2692f::t_bb3d2c62240669 36,105,114
+agent/src/test/java/org/jotaro/jotarocode/skill/SkillCatalogTest.java
+  s_a06df77ee2692f::t_bb3d2c62240669 82
+agent/src/main/java/org/jotaro/jotarocode/agent/rag/RagClient.java
+  s_a06df77ee2692f::t_bb3d2c62240669 7,22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "6494613020b187b1d820bc7c82f572da8853aa4d",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    },
+    "s_f2f7eba998c4e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1d438-7ed5-7262-a44e-ec338d1f9f7e",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
