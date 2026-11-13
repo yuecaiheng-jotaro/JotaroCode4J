@@ -3,24 +3,38 @@
 
 一个用 Spring AI 写的编程 Agent。网页和终端是两种入口，背后是同一个循环：模型回复一次，循环执行它点名的工具，再把结果送回去，直到它不再要工具。
 
-需要 Java 17 和 Maven。密钥放环境变量，不要写进仓库。
+需要 Java 17 和 Maven。仓库里是两个应用：`agent` 是编程助手，`rag` 是知识库管理端。密钥放环境变量，不要写进仓库。
 
 ```bash
 export DEEPSEEK_API_KEY=你的密钥
 # 可选
 # export ZHIPU_API_KEY=你的密钥
 # export DASHSCOPE_API_KEY=你的密钥
-
-mvn spring-boot:run
 ```
 
-打开 http://127.0.0.1:8080 。页面由这个进程直接提供。
-
-终端不监听端口，同一次启动不能又开网页：
+开发时在仓库根目录启动。两个进程互不包含，要同时用就开两个终端。
 
 ```bash
-mvn spring-boot:run -Dspring-boot.run.arguments=--tui
+mvn -pl rag spring-boot:run
+mvn -pl agent spring-boot:run
 ```
+
+Agent 页面在 http://127.0.0.1:8080 ，知识库页面在 http://127.0.0.1:8090 。终端不监听端口，同一次启动不能又开网页：
+
+```bash
+mvn -pl agent spring-boot:run -Dspring-boot.run.arguments=--tui
+```
+
+打包成两个可执行 jar。测试会一起跑；只打包时加上 `-DskipTests`。
+
+```bash
+mvn -DskipTests package
+java -jar rag/target/jotaro-rag-0.0.1-SNAPSHOT.jar
+java -jar agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar
+java -jar agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar --tui
+```
+
+`java -jar` 时的当前目录就是 Agent 工具看到的工作目录，在仓库根执行即可。
 
 ## 结构
 
@@ -136,11 +150,11 @@ flowchart TD
 | `currentTime` | 当前本地时间 |
 | `terminate` | 结束这一轮循环 |
 | `subagent` | 把独立任务交给子代理。单个用 `agent` + `task`；`tasks` 并行，最多 8 个；`chain` 按顺序执行，下一步可用 `{previous}` |
-| `rag` | 检索知识库。`query` 必填，`knowledgeBase` 可空。服务是旁边的 jotaro-rag，库是 PostgreSQL 的 `jotaro_rag` |
+| `rag` | 检索知识库。`query` 必填，`knowledgeBase` 可空。服务是本仓库的 `rag` 模块，库是 PostgreSQL 的 `jotaro_rag` |
 
 相对路径相对启动时的工作目录。`~` 会展开。`ls`、`grep`、`find` 遵守 `.gitignore`。`write` 和 `edit` 对同一文件串行。
 
-知识库不在这个进程里。PostgreSQL 的 `jotaro_rag` 由旁边的 jotaro-rag 管理，`rag` 工具只访问它的 HTTP 接口。
+知识库不在 Agent 进程里。PostgreSQL 的 `jotaro_rag` 由本仓库的 `rag` 模块管理，`rag` 工具只访问它的 HTTP 接口。一次查询会走所有打开的通路，再用倒数排名合并。现在接通的是 `postgres`。把 `rag.elasticsearch.enabled` 或 `rag.graph.enabled` 设为 `true` 后，Elasticsearch 和 GraphQL 会加入同一次检索。新通路实现 `Retriever` 并标成组件即可。
 
 `subagent` 每次调用都会新开一个会话，子代理看不到父对话。内置 `explore` 只有 `read`、`grep`、`find`、`ls`；`general` 使用除 `subagent` 以外的工具。同名 markdown 可以覆盖它们，目录是 `~/.pi/agent/agents/*.md`，以及从工作目录向上找到的最近 `.pi/agents/`。子代理步数上限是 8，模型默认跟随父会话，文件里的 `model` 可以单独指定。父代理在一次回复里发出的多个 `subagent` 调用本身也会并行。
 
@@ -193,12 +207,14 @@ description: 从 PDF 提取文字。阅读或转换 PDF 时使用。
 | `max-steps` | `20` | 一次运行最多多少条助手消息 |
 | `message-window` | `40` | 发给模型的最近消息数 |
 | `system-prompt` | 见文件 | 工具使用说明。技能目录接在它后面 |
-| `rag.base-url` | `http://127.0.0.1:8090` | jotaro-rag 的地址。库表不在本进程里 |
+| `rag.base-url` | `http://127.0.0.1:8090` | `rag` 模块的地址。库表不在 Agent 进程里 |
 
 ## 测试
 
 ```bash
 mvn test
 ```
+
+只测一个应用时用 `mvn -pl agent test` 或 `mvn -pl rag test`。`rag` 的检索测试会连本机 PostgreSQL 的 `jotaro_rag`。
 
 循环、工具、技能发现和终端输出都不访问真实模型。

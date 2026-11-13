@@ -23,7 +23,7 @@ public class PiAgentProperties {
             内置 explore 只读，general 可以改文件和执行命令。子代理看不到这段对话，也不能再派生子代理。
             需要知识库里的资料时调用 rag，传 query，可选 knowledgeBase。
             """;
-    /** 知识库服务地址。库表在 jotaro-rag 项目里，库名 jotaro_rag。 */
+    /** 知识库服务地址。库表在 rag 模块里，库名 jotaro_rag。 */
     private Rag rag = new Rag();
 
     @Data

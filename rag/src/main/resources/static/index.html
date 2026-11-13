@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jotaro RAG</title>
+  <style>
+    :root { color-scheme: light dark; font-family: "Iowan Old Style", Palatino, Georgia, serif; }
+    body { margin: 0; background: Canvas; color: CanvasText; }
+    header, main { max-width: 980px; margin: 0 auto; padding: 24px; }
+    header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid color-mix(in srgb, CanvasText 18%, transparent); }
+    h1 { font-size: 22px; font-weight: 500; margin: 0; }
+    h2 { font-size: 16px; font-weight: 500; margin: 0 0 12px; }
+    .routes { font-size: 13px; opacity: 0.75; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 28px; }
+    button, input, textarea, select { font: inherit; color: inherit; background: Canvas; border: 1px solid color-mix(in srgb, CanvasText 30%, transparent); border-radius: 6px; }
+    button { padding: 6px 12px; cursor: pointer; }
+    input, textarea, select { width: 100%; padding: 8px; box-sizing: border-box; }
+    textarea { min-height: 140px; resize: vertical; }
+    form { display: grid; gap: 8px; margin-bottom: 18px; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, CanvasText 12%, transparent); }
+    .base { display: flex; justify-content: space-between; gap: 8px; }
+    .base button { border: 0; background: transparent; padding: 0; text-align: left; }
+    .base.active button { font-weight: 600; }
+    .hit { margin: 0 0 14px; }
+    .meta { font-size: 12px; opacity: 0.7; font-family: ui-monospace, monospace; }
+    .error { color: #9b2c2c; min-height: 1.2em; }
+    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Jotaro RAG</h1>
+  <div class="routes" id="routes"></div>
+</header>
+<main class="layout">
+  <section>
+    <h2>知识库</h2>
+    <form id="base-form">
+      <input name="name" placeholder="名称，例如 handbook" required pattern="[a-z0-9][a-z0-9-]{0,62}">
+      <input name="description" placeholder="说明，可空">
+      <button type="submit">新建</button>
+    </form>
+    <ul id="bases"></ul>
+  </section>
+  <section>
+    <h2 id="current">先选一个知识库</h2>
+    <p class="error" id="error"></p>
+    <form id="doc-form" hidden>
+      <input name="title" placeholder="标题" required>
+      <input name="source" placeholder="来源，可空">
+      <textarea name="content" placeholder="正文" required></textarea>
+      <button type="submit">写入</button>
+    </form>
+    <ul id="documents"></ul>
+    <form id="search-form" hidden>
+      <input name="query" placeholder="检索" required>
+      <button type="submit">搜索</button>
+    </form>
+    <div id="hits"></div>
+  </section>
+</main>
+<script>
+const state = { base: "" };
+const error = document.getElementById("error");
+
+function fail(message) { error.textContent = message || ""; }
+async function api(url, options) {
+  const response = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
+  if (!response.ok) throw new Error(body && body.error ? body.error : response.statusText);
+  return body;
+}
+
+async function loadRoutes() {
+  const routes = await api("/api/routes");
+  document.getElementById("routes").textContent = routes
+    .map(route => route.name + (route.enabled ? " 开" : " 关"))
+    .join(" · ");
+}
+
+async function loadBases() {
+  const bases = await api("/api/bases");
+  const list = document.getElementById("bases");
+  list.replaceChildren();
+  for (const base of bases) {
+    const item = document.createElement("li");
+    item.className = "base" + (base.name === state.base ? " active" : "");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = base.name;
+    button.onclick = () => select(base.name);
+    const count = document.createElement("span");
+    count.className = "meta";
+    count.textContent = String(base.documents);
+    item.append(button, count);
+    list.append(item);
+  }
+}
+
+async function select(name) {
+  state.base = name;
+  document.getElementById("current").textContent = name;
+  document.getElementById("doc-form").hidden = false;
+  document.getElementById("search-form").hidden = false;
+  document.getElementById("hits").replaceChildren();
+  await loadBases();
+  const documents = await api("/api/bases/" + encodeURIComponent(name) + "/documents");
+  const list = document.getElementById("documents");
+  list.replaceChildren();
+  for (const doc of documents) {
+    const item = document.createElement("li");
+    const title = document.createElement("div");
+    title.textContent = doc.title + " · " + doc.chunks + " 段";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "删除";
+    remove.onclick = async () => {
+      await api("/api/documents/" + doc.id, { method: "DELETE" }).catch(show);
+      select(name);
+    };
+    item.append(title, remove);
+    list.append(item);
+  }
+}
+
+function show(exception) { fail(exception.message); }
+
+document.getElementById("base-form").onsubmit = async (event) => {
+  event.preventDefault();
+  fail("");
+  const data = new FormData(event.target);
+  try {
+    await api("/api/bases", { method: "POST", body: JSON.stringify({
+      name: data.get("name"), description: data.get("description")
+    }) });
+    event.target.reset();
+    await select(String(data.get("name")));
+  } catch (exception) { show(exception); }
+};
+
+document.getElementById("doc-form").onsubmit = async (event) => {
+  event.preventDefault();
+  fail("");
+  const data = new FormData(event.target);
+  try {
+    await api("/api/bases/" + encodeURIComponent(state.base) + "/documents", {
+      method: "POST",
+      body: JSON.stringify({ title: data.get("title"), source: data.get("source"), content: data.get("content") })
+    });
+    event.target.reset();
+    await select(state.base);
+  } catch (exception) { show(exception); }
+};
+
+document.getElementById("search-form").onsubmit = async (event) => {
+  event.preventDefault();
+  fail("");
+  const data = new FormData(event.target);
+  try {
+    const result = await api("/api/search", {
+      method: "POST",
+      body: JSON.stringify({ query: data.get("query"), knowledgeBase: state.base, limit: 5 })
+    });
+    const hits = document.getElementById("hits");
+    hits.replaceChildren();
+    if (!result.hits.length) {
+      hits.textContent = "没有匹配。";
+      return;
+    }
+    for (const hit of result.hits) {
+      const block = document.createElement("article");
+      block.className = "hit";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = hit.route + " · " + Number(hit.score).toFixed(4) + (hit.source ? " · " + hit.source : "");
+      const title = document.createElement("strong");
+      title.textContent = hit.title || "未命名";
+      const body = document.createElement("p");
+      body.textContent = hit.content;
+      block.append(meta, title, body);
+      hits.append(block);
+    }
+  } catch (exception) { show(exception); }
+};
+
+loadRoutes().catch(show);
+loadBases().catch(show);
+</script>
+</body>
+</html>

@@ -2,5 +2,5 @@ target/
 .idea/
 *.iml
 .DS_Store
-src/main/resources/application-local.yaml
+agent/src/main/resources/application-local.yaml
 .cursor

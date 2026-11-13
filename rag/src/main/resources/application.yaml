@@ -1,0 +1,35 @@
+# 知识库管理端。本机 PostgreSQL 对 127.0.0.1 是 trust，密码留空，用户用当前系统用户。
+server:
+  port: 8090
+
+spring:
+  application:
+    name: jotaro-rag
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/jotaro_rag
+    username: ${user.name}
+    password: ${RAG_DB_PASSWORD:}
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+rag:
+  # 参与混合检索的通路。postgres 已实现。elasticsearch、graph 打开下面的 enabled 后自动加入。
+  routes:
+    - postgres
+  rrf-k: 60
+  limit: 5
+  embedding:
+    # 关掉时只用全文和三元组。打开后写入 chunk.embedding，向量维数要和表里的 vector(1024) 一致。
+    enabled: false
+    dimensions: 1024
+  elasticsearch:
+    enabled: false
+    url: http://127.0.0.1:9200
+    index: jotaro-rag
+  graph:
+    enabled: false
+    url:
+    # GraphQL 文档。变量是 $query 和 $limit，返回的数组元素要有 content，可选 title、score、source、id。
+    query:
