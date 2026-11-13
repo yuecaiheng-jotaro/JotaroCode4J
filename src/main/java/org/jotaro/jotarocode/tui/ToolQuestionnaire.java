@@ -28,10 +28,9 @@ final class ToolQuestionnaire {
 
     static List<String> prompt(String toolName, String arguments) {
         List<String> lines = new ArrayList<>();
-        lines.add("问卷 · " + toolName);
-        lines.add(preview(toolName, arguments));
-        lines.add("y 允许这次    a 全部允许    n 拒绝");
-        lines.add("其他文字当作提示交回模型，不执行这次调用");
+        lines.add("╭ 允许执行 " + ToolGlance.label(toolName));
+        lines.add("│ " + preview(toolName, arguments));
+        lines.add("╰ y 允许这次 · a 全部允许 · n 拒绝 · 其他文字当作提示");
         return lines;
     }
 
@@ -55,10 +54,10 @@ final class ToolQuestionnaire {
             return "参数: " + shorten(arguments == null ? "" : arguments);
         }
         return switch (toolName) {
-            case "bash", "powershell" -> "将执行: " + shorten(text(node, "command"));
-            case "write" -> "将覆盖: " + text(node, "path") + "（" + text(node, "content").length() + " 字符）";
-            case "edit" -> "将修改: " + text(node, "path") + "（" + editCount(node) + " 处替换）";
-            default -> "参数: " + shorten(arguments);
+            case "bash", "powershell" -> shorten(text(node, "command"));
+            case "write" -> text(node, "path") + "（" + text(node, "content").length() + " 字符）";
+            case "edit" -> text(node, "path") + "（" + editCount(node) + " 处替换）";
+            default -> shorten(arguments);
         };
     }
 

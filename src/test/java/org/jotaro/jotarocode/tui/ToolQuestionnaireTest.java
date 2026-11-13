@@ -33,7 +33,7 @@ class ToolQuestionnaireTest {
     @Test
     void previewShowsTheCommandNotTheWholePayload() {
         List<String> lines = ToolQuestionnaire.prompt("bash", "{\"command\":\"rm -rf build\",\"timeout\":30}");
-        assertEquals("问卷 · bash", lines.get(0));
-        assertEquals("将执行: rm -rf build", lines.get(1));
+        assertEquals("╭ 允许执行 Bash", lines.get(0));
+        assertEquals("│ rm -rf build", lines.get(1));
     }
 }

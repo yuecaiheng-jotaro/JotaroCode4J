@@ -20,15 +20,18 @@ public final class AgentEventFormatter {
     private final StringBuilder reasoningPending = new StringBuilder();
     private boolean streamed;
     private boolean thinking;
+    private boolean thinkingMarked;
+    private boolean bullet = true;
 
     public List<String> format(AgentEvent event) {
         List<String> lines = new ArrayList<>();
+        if (event.getType() == AgentEventType.TURN_START) {
+            bullet = true;
+            return lines;
+        }
         if (event.getType() == AgentEventType.MESSAGE_UPDATE && event.isReasoning()) {
             if (event.getTextDelta() != null) {
-                if (!thinking) {
-                    thinking = true;
-                    lines.add(PromptStyle.thinking("思考"));
-                }
+                thinking = true;
                 reasoningPending.append(event.getTextDelta());
             }
             drainReasoning(lines, false);
@@ -54,18 +57,32 @@ public final class AgentEventFormatter {
         }
         if (event.getType() == AgentEventType.TOOL_EXECUTION_START) {
             closeThinking(lines);
-            lines.add("→ " + safe(event.getToolName()) + " " + safe(event.getArguments()));
+            drain(lines, true);
+            bullet = true;
+            if (!"subagent".equals(event.getToolName())) {
+                lines.add(PromptStyle.tool("  " + ToolGlance.call(event.getToolName(), event.getArguments())));
+            }
             return lines;
         }
         if (event.getType() == AgentEventType.TOOL_EXECUTION_END) {
-            String mark = Boolean.TRUE.equals(event.getError()) ? "✗" : "←";
-            lines.add(mark + " " + safe(event.getToolName()) + " " + abbreviate(safe(event.getResult())));
+            bullet = true;
+            if ("subagent".equals(event.getToolName())) {
+                return lines;
+            }
+            String preview = ToolGlance.preview(event.getResult());
+            if (Boolean.TRUE.equals(event.getError())) {
+                lines.add(PromptStyle.dim("  ✗ " + (preview.isEmpty() ? safe(event.getToolName()) : preview)));
+            } else if (!preview.isEmpty()) {
+                lines.add(PromptStyle.dim("  ⎿  " + preview));
+            }
             return lines;
         }
         if (event.getType() == AgentEventType.AGENT_END) {
             closeThinking(lines);
             drain(lines, true);
-            lines.add(event.isStepLimitReached() ? "[已达到最大步数]" : "[完成]");
+            if (event.isStepLimitReached()) {
+                lines.add(PromptStyle.dim("已达到最大步数"));
+            }
         }
         return lines;
     }
@@ -88,6 +105,7 @@ public final class AgentEventFormatter {
         }
         drainReasoning(lines, true);
         thinking = false;
+        thinkingMarked = false;
         lines.add("");
     }
 
@@ -108,23 +126,37 @@ public final class AgentEventFormatter {
         }
     }
 
-    private static void addThinking(List<String> lines, String text) {
-        if (!text.isEmpty()) {
-            lines.add(PromptStyle.thinking(text));
+    private void addThinking(List<String> lines, String text) {
+        if (text.isEmpty()) {
+            return;
         }
+        String prefix = thinkingMarked ? "  " : "✻ ";
+        thinkingMarked = true;
+        lines.add(PromptStyle.thinking(prefix + text));
     }
 
     private void drain(List<String> lines, boolean flushTail) {
         int newline;
         while ((newline = indexOfNewline(pending)) >= 0) {
-            lines.add(pending.substring(0, newline));
+            lines.add(styleLine(pending.substring(0, newline)));
             int drop = pending.charAt(newline) == '\r' ? 2 : 1;
             pending.delete(0, Math.min(pending.length(), newline + drop));
         }
         if (flushTail && !pending.isEmpty()) {
-            lines.add(pending.toString());
+            lines.add(styleLine(pending.toString()));
             pending.setLength(0);
         }
+    }
+
+    private String styleLine(String text) {
+        if (text.isEmpty()) {
+            return "";
+        }
+        if (bullet) {
+            bullet = false;
+            return PromptStyle.mark() + text;
+        }
+        return "  " + text;
     }
 
     private static int indexOfNewline(StringBuilder text) {
@@ -134,14 +166,6 @@ public final class AgentEventFormatter {
             }
         }
         return -1;
-    }
-
-    private static String abbreviate(String value) {
-        String singleLine = value.replace('\n', ' ').replace('\r', ' ');
-        if (singleLine.length() <= 180) {
-            return singleLine;
-        }
-        return singleLine.substring(0, 180) + "...";
     }
 
     private static String safe(String value) {

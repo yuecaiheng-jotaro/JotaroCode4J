@@ -35,6 +35,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
     private int slashIndex = -1;
     private String slashDraft = "";
     private int slashDraftCursor;
+    private String footerText = "";
 
     SingleColumnLineReader(Terminal terminal) {
         super(terminal, "pi-agent", new HashMap<>());
@@ -80,6 +81,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
     public String readLine(String prompt, String rightPrompt, MaskingCallback maskingCallback, String buffer)
             throws UserInterruptException, EndOfFileException {
         boolean disabled = disableInterruptSignal();
+        restoreFooter();
         try {
             return super.readLine(prompt, rightPrompt, maskingCallback, buffer);
         } finally {
@@ -446,7 +448,20 @@ final class SingleColumnLineReader extends LineReaderImpl {
         slashIndex = -1;
         slashDraft = "";
         slashDraftCursor = 0;
-        post = null;
+        restoreFooter();
+    }
+
+    void setFooter(String footer) {
+        footerText = footer == null ? "" : footer;
+    }
+
+    private void restoreFooter() {
+        if (footerText.isEmpty()) {
+            post = null;
+            return;
+        }
+        String text = footerText;
+        post = () -> AttributedString.fromAnsi(text);
     }
 
     private void writeCandidate(Candidate candidate, ParsedLine parsed, boolean withSuffix) {
@@ -496,9 +511,10 @@ final class SingleColumnLineReader extends LineReaderImpl {
      * 把已经完成的行写到滚动区，并立刻重画提示符。读行还没开始时只把完成的行打出来。
      * 提示符可以是多行：上面是正在生成的半行，下面才是输入。
      */
-    void present(List<String> lines, String promptText, String rightPromptText) {
+    void present(List<String> lines, String promptText, String rightPromptText, String footer) {
         lock.lock();
         try {
+            setFooter(footer);
             if (!reading || display == null) {
                 for (String line : lines) {
                     terminal.writer().println(line == null ? "" : line);
@@ -516,6 +532,9 @@ final class SingleColumnLineReader extends LineReaderImpl {
             }
             this.prompt = AttributedString.fromAnsi(promptText == null ? "" : promptText);
             setRightPrompt(rightPromptText);
+            if (slashIndex < 0) {
+                restoreFooter();
+            }
             redisplay(false);
             terminal.flush();
         } finally {

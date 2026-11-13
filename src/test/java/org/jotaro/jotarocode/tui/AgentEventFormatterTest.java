@@ -24,7 +24,7 @@ class AgentEventFormatterTest {
                 .message(new AssistantMessage("你好\n世界！"))
                 .build()));
 
-        assertEquals(List.of("你好", "世界！"), lines);
+        assertEquals(List.of(PromptStyle.mark() + "你好", "  世界！"), lines);
         assertEquals("", formatter.livePlain());
     }
 
@@ -35,7 +35,7 @@ class AgentEventFormatterTest {
         assertEquals(List.of(), formatter.format(update("你好")));
         assertEquals("你好", formatter.livePlain());
         assertEquals(false, formatter.liveThinking());
-        assertEquals(List.of("你好"), formatter.format(update("\n")));
+        assertEquals(List.of(PromptStyle.mark() + "你好"), formatter.format(update("\n")));
         assertEquals("", formatter.livePlain());
     }
 
@@ -51,10 +51,9 @@ class AgentEventFormatterTest {
                 .build()));
 
         assertEquals(List.of(
-                PromptStyle.thinking("思考"),
-                PromptStyle.thinking("先看一下"),
+                PromptStyle.thinking("✻ 先看一下"),
                 "",
-                "答案"
+                PromptStyle.mark() + "答案"
         ), lines);
     }
 
@@ -63,7 +62,7 @@ class AgentEventFormatterTest {
         String chunk = "a".repeat(48);
         AgentEventFormatter formatter = new AgentEventFormatter();
 
-        assertEquals(List.of(PromptStyle.thinking("思考"), PromptStyle.thinking(chunk)),
+        assertEquals(List.of(PromptStyle.thinking("✻ " + chunk)),
                 formatter.format(reasoning(chunk)));
     }
 
@@ -84,7 +83,10 @@ class AgentEventFormatterTest {
                 .build()));
         lines.addAll(formatter.format(AgentEvent.builder().type(AgentEventType.AGENT_END).build()));
 
-        assertEquals(List.of("→ readFile {\"path\":\"a.txt\"}", "← readFile content", "[完成]"), lines);
+        assertEquals(List.of(
+                PromptStyle.tool("  readFile a.txt"),
+                PromptStyle.dim("  ⎿  content")
+        ), lines);
     }
 
     private static AgentEvent update(String delta) {

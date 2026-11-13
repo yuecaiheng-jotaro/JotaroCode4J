@@ -1,8 +1,8 @@
 package org.jotaro.jotarocode.tui;
 
 /**
- * 终端提示符。空闲是铜色 {@code ◆ jotaro ❯}，运行中改成金色 {@code ◆ steer ❯}，模型名放在行尾。
- * 运行时在输入框上方另起一行显示正在生成的文字，中间空一行，避免和输入贴在一起。
+ * 终端样式。输入区是底部一框，光标行只有一个窄的 {@code ❯}。
+ * 运行时，正在生成的文字或当前动作显示在框的上方。
  * 只用一列宽的符号，避免光标比实际字符多偏一格。
  */
 final class PromptStyle {
@@ -12,11 +12,24 @@ final class PromptStyle {
 
     static String left(boolean running) {
         String accent = running ? "178" : "172";
-        String name = running ? "steer" : "jotaro";
-        return color(accent) + "◆" + reset()
-                + " \u001b[1m" + name + "\u001b[22m "
-                + color(accent) + "❯" + reset()
-                + " ";
+        return color(accent) + "❯" + reset() + " ";
+    }
+
+    /** 助手每段开头的圆点。 */
+    static String mark() {
+        return color("172") + "●" + reset() + " ";
+    }
+
+    static String tool(String text) {
+        return color("74") + text + reset();
+    }
+
+    static String dim(String text) {
+        return color("245") + text + reset();
+    }
+
+    static String user(String text) {
+        return "\u001b[1m❯ " + text + "\u001b[22m";
     }
 
     static String right(String model) {
@@ -27,17 +40,34 @@ final class PromptStyle {
     }
 
     /**
-     * 运行中的画面：上面是当前这行还没结束的输出，或一句状态；空一行之后才是输入提示符。
-     * 空闲时只留输入提示符，上面的内容已经写进滚动区。
+     * 输入框。运行中先放正在生成的半行或状态，再画上框线；空闲时只留框。
      */
-    static String frame(boolean running, String livePlain, boolean thinking, String status) {
+    static String frame(boolean running, String livePlain, boolean thinking, String status, int columns) {
+        String rule = rule(running ? "steer" : "jotaro", columns);
+        String input = left(running);
         if (!running) {
-            return left(false);
+            return rule + "\n" + input;
         }
         String band = livePlain == null || livePlain.isEmpty()
                 ? status(status == null || status.isBlank() ? "正在回复" : status)
                 : (thinking ? thinking(livePlain) : livePlain);
-        return band + "\n\n" + left(true);
+        return band + "\n" + rule + "\n" + input;
+    }
+
+    static String footer(String model, boolean running, int columns) {
+        String hint = running ? "继续输入会插入这一轮 · ctrl-c 停止" : "enter 发送 · / 命令";
+        String body = model == null || model.isBlank() ? hint : model + " · " + hint;
+        return ruleEdge("╰─ ", body, columns);
+    }
+
+    private static String rule(String name, int columns) {
+        return ruleEdge("╭─ ", name, columns);
+    }
+
+    private static String ruleEdge(String edge, String label, int columns) {
+        String head = edge + label + " ";
+        int rest = Math.max(0, (columns <= 4 ? 72 : columns) - columnsOf(head));
+        return color("240") + head + "─".repeat(rest) + reset();
     }
 
     static String status(String text) {

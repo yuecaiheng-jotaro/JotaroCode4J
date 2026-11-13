@@ -4,6 +4,7 @@ import org.jotaro.jotarocode.agent.PiAgent;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
+import org.jotaro.jotarocode.agent.runtime.SubagentActivity;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
@@ -14,30 +15,41 @@ import org.jline.terminal.TerminalBuilder;
 import org.springframework.ai.chat.client.ChatClient;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
- * 终端里的 Jotaro UI。空闲提示符是 {@code ◆ jotaro ❯}，运行中是 {@code ◆ steer ❯}，这时输入会插进当前轮。
- * 正在生成的半行显示在输入框上方，中间空一行；运行结束立刻切回 jotaro，不用再按一次回车。
- * 模型名显示在行尾。普通文字用上键回溯已发送的内容，下键向前。行首是 {@code /} 时，上下键在候选里移动，回车选定。
+ * 终端里的 Jotaro UI。底部是一框输入，空闲标着 jotaro，运行中标着 steer。
+ * 正在生成的文字和子代理的当前动作显示在框上方。子代理按嵌套块展开，而不是等结束再吐出整段结果。
+ * 运行结束立刻切回 jotaro。运行中再输入会插进当前轮。
+ * 普通文字用上键回溯已发送的内容，下键向前。行首是 {@code /} 时，上下键在候选里移动，回车选定。
  * Ctrl+C 中断当前运行，Ctrl+D 退出。斜杠开头的行是命令，不会发给模型，也不进历史。
  * 执行 bash、powershell、write、edit 之前会发问卷：y 允许这次，a 全部允许，n 拒绝，其他文字当作提示。
  * 输入 {@code /} 后按前缀给出灰色提示。Tab 列出匹配的命令，每条一行；{@code /model} 后再补全模型名。
  */
 public final class PiAgentTui {
 
+    private static final String[] SPIN = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+
     private final PiAgent agent;
     private final ChatClientRegistry registry;
     private volatile String model;
     private final AgentEventFormatter formatter = new AgentEventFormatter();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
+    private final SubagentPane subagents = new SubagentPane();
+    private final java.util.concurrent.ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "pi-agent-tui");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private final ScheduledExecutorService spinner = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "pi-agent-spin");
         thread.setDaemon(true);
         return thread;
     });
     private volatile boolean stopped;
     private volatile boolean showingRun;
+    private volatile int spin;
     private volatile String activity = "正在回复";
     private volatile Thread runThread;
     private final Object screen = new Object();
@@ -59,12 +71,15 @@ public final class PiAgentTui {
         reader.setAutosuggestion(LineReader.SuggestionType.COMPLETER);
         questions = new QuestionGate(lines -> printLines(reader, lines));
         agent.setBeforeToolCall(questions::beforeCall);
+        agent.setSubagentActivity(this::onSubagent);
         agent.subscribe(this::onEvent);
+        spinner.scheduleAtFixedRate(this::tick, 80, 80, TimeUnit.MILLISECONDS);
         printLines(reader, List.of(PromptStyle.banner()));
         while (!stopped) {
             String line;
             try {
-                line = reader.readLine(currentFrame(), PromptStyle.right(model), (Character) null, null);
+                reader.setFooter(PromptStyle.footer(model, showingRun || agent.isRunning(), reader.columns()));
+                line = reader.readLine(currentFrame(), null, (Character) null, null);
             } catch (UserInterruptException exception) {
                 interruptRun(reader);
                 continue;
@@ -81,6 +96,20 @@ public final class PiAgentTui {
             questions.cancel();
         }
         executor.shutdownNow();
+        spinner.shutdownNow();
+    }
+
+    private void tick() {
+        if (stopped || reader == null || (!showingRun && !agent.isRunning())) {
+            return;
+        }
+        if (!formatter.livePlain().isEmpty()) {
+            return;
+        }
+        spin = (spin + 1) % SPIN.length;
+        synchronized (screen) {
+            paint(List.of());
+        }
     }
 
     private void handle(LineReader reader, String line) {
@@ -96,9 +125,11 @@ public final class PiAgentTui {
             return;
         }
         if (agent.isRunning()) {
+            printLines(reader, List.of(PromptStyle.user(line), PromptStyle.dim("  插入当前回复")));
             agent.prompt(line);
             return;
         }
+        printLines(reader, List.of(PromptStyle.user(line)));
         showingRun = true;
         activity = "正在回复";
         executor.submit(() -> {
@@ -121,8 +152,8 @@ public final class PiAgentTui {
 
     private void onEvent(AgentEvent event) {
         synchronized (screen) {
-            if (event.getType() == AgentEventType.TOOL_EXECUTION_START) {
-                activity = "正在执行 " + (event.getToolName() == null ? "工具" : event.getToolName());
+            if (event.getType() == AgentEventType.TOOL_EXECUTION_START && !"subagent".equals(event.getToolName())) {
+                activity = ToolGlance.call(event.getToolName(), event.getArguments());
             } else if (event.getType() == AgentEventType.MESSAGE_UPDATE
                     || event.getType() == AgentEventType.TOOL_EXECUTION_END
                     || event.getType() == AgentEventType.TURN_START) {
@@ -132,20 +163,43 @@ public final class PiAgentTui {
         }
     }
 
+    private void onSubagent(SubagentActivity activity) {
+        synchronized (screen) {
+            paint(subagents.accept(activity));
+        }
+    }
+
     private void paint(List<String> lines) {
         if (reader == null) {
             return;
         }
         boolean running = showingRun || agent.isRunning();
-        String live = PromptStyle.tail(formatter.livePlain(), reader.columns());
-        reader.present(lines, PromptStyle.frame(running, live, formatter.liveThinking(), activity), PromptStyle.right(model));
+        int columns = reader.columns();
+        String live = PromptStyle.tail(formatter.livePlain(), columns);
+        String detail = subagents.status();
+        String status = detail != null ? detail : activity;
+        if (running && live.isEmpty()) {
+            status = SPIN[Math.floorMod(spin, SPIN.length)] + " " + status;
+        }
+        reader.present(
+                lines,
+                PromptStyle.frame(running, live, formatter.liveThinking(), status, columns),
+                null,
+                PromptStyle.footer(model, running, columns)
+        );
     }
 
     private String currentFrame() {
         synchronized (screen) {
             boolean running = showingRun || agent.isRunning();
-            String live = reader == null ? "" : PromptStyle.tail(formatter.livePlain(), reader.columns());
-            return PromptStyle.frame(running, live, formatter.liveThinking(), activity).replace("%", "%%");
+            int columns = reader == null ? 80 : reader.columns();
+            String live = reader == null ? "" : PromptStyle.tail(formatter.livePlain(), columns);
+            String detail = subagents.status();
+            String status = detail != null ? detail : activity;
+            if (running && live.isEmpty()) {
+                status = SPIN[Math.floorMod(spin, SPIN.length)] + " " + status;
+            }
+            return PromptStyle.frame(running, live, formatter.liveThinking(), status, columns).replace("%", "%%");
         }
     }
 

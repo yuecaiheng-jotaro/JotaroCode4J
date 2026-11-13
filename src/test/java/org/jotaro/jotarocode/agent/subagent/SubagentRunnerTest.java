@@ -116,7 +116,7 @@ class SubagentRunnerTest {
         SubagentScope.run(new SubagentScope.Context("deepseek-chat", context -> {
             confirmed.set(context.getToolCall().name());
             return BeforeToolCallResult.builder().block(true).reason("先不要读").build();
-        }), () -> {
+        }, null), () -> {
             String result = new SubagentRunner().execute(
                     "reader",
                     "read me",

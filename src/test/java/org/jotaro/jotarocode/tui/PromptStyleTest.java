@@ -11,36 +11,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PromptStyleTest {
 
     @Test
-    void idlePromptUsesJotaroMark() {
-        assertEquals("◆ jotaro ❯ ", plain(PromptStyle.left(false)));
+    void inputMarkStaysNarrow() {
+        assertEquals("❯ ", plain(PromptStyle.left(false)));
         assertSameWidth(PromptStyle.left(false));
+        assertEquals(plain(PromptStyle.left(false)), plain(PromptStyle.left(true)));
     }
 
     @Test
-    void runningPromptUsesSteerMark() {
-        assertEquals("◆ steer ❯ ", plain(PromptStyle.left(true)));
-        assertSameWidth(PromptStyle.left(true));
-    }
+    void runningFrameKeepsTheLiveLineAboveTheBox() {
+        String shown = plain(PromptStyle.frame(true, "你好", false, "正在回复", 24));
 
-    @Test
-    void runningFrameKeepsTheLiveLineAboveAGap() {
-        String shown = plain(PromptStyle.frame(true, "你好", false, "正在回复"));
-
-        assertTrue(shown.startsWith("你好\n\n"));
-        assertTrue(shown.endsWith("◆ steer ❯ "));
+        assertTrue(shown.startsWith("你好\n╭─ steer"));
+        assertTrue(shown.endsWith("❯ "));
     }
 
     @Test
     void runningFrameUsesStatusUntilTextArrives() {
-        String shown = plain(PromptStyle.frame(true, "", false, "正在回复"));
+        String shown = plain(PromptStyle.frame(true, "", false, "正在回复", 24));
 
-        assertTrue(shown.startsWith("正在回复\n\n"));
-        assertTrue(shown.endsWith("◆ steer ❯ "));
+        assertTrue(shown.startsWith("正在回复\n╭─ steer"));
+        assertTrue(shown.endsWith("❯ "));
     }
 
     @Test
-    void idleFrameDropsTheLiveLine() {
-        assertEquals("◆ jotaro ❯ ", plain(PromptStyle.frame(false, "残留", false, "正在回复")));
+    void idleFrameIsOnlyTheBox() {
+        String shown = plain(PromptStyle.frame(false, "残留", false, "正在回复", 24));
+
+        assertTrue(shown.startsWith("╭─ jotaro"));
+        assertTrue(shown.endsWith("❯ "));
+        assertTrue(!shown.contains("残留"));
     }
 
     @Test

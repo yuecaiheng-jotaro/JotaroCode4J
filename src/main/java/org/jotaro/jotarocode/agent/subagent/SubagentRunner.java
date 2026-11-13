@@ -6,6 +6,7 @@ import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.AssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.RunControl;
+import org.jotaro.jotarocode.agent.runtime.SubagentActivity;
 import org.jotaro.jotarocode.agent.runtime.SubagentScope;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -19,6 +20,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -34,6 +37,7 @@ public final class SubagentRunner {
     public static final int MAX_STEPS = 8;
     private static final int MAX_CHARS = 50_000;
     private static final String TOOL_NAME = "subagent";
+    private final AtomicInteger sequence = new AtomicInteger();
 
     public record Task(String agent, String task) {
     }
@@ -167,31 +171,82 @@ public final class SubagentRunner {
         if (scope != null && scope.beforeToolCall() != null) {
             child.setBeforeToolCall(scope.beforeToolCall());
         }
+        Consumer<SubagentActivity> activity = scope == null ? null : scope.activity();
+        String id = definition.name() + "-" + sequence.incrementAndGet();
         StringBuilder text = new StringBuilder();
         AtomicBoolean limited = new AtomicBoolean();
+        AtomicBoolean streamed = new AtomicBoolean();
+        tell(activity, id, definition.name(), task, SubagentActivity.Kind.STARTED, task);
         child.subscribe(event -> {
+            if (event.getType() == AgentEventType.TURN_START) {
+                streamed.set(false);
+            }
+            if (event.getType() == AgentEventType.MESSAGE_UPDATE && event.isReasoning()) {
+                tell(activity, id, definition.name(), task, SubagentActivity.Kind.THINKING, "");
+            }
+            if (event.getType() == AgentEventType.MESSAGE_UPDATE && !event.isReasoning()
+                    && event.getTextDelta() != null && !event.getTextDelta().isEmpty()) {
+                streamed.set(true);
+                tell(activity, id, definition.name(), task, SubagentActivity.Kind.TEXT, event.getTextDelta());
+            }
             if (event.getType() == AgentEventType.MESSAGE_END && event.getMessage() instanceof AssistantMessage assistant) {
                 text.setLength(0);
                 if (assistant.getText() != null) {
                     text.append(assistant.getText());
                 }
+                if (!streamed.get() && assistant.getText() != null && !assistant.getText().isBlank()) {
+                    tell(activity, id, definition.name(), task, SubagentActivity.Kind.TEXT, assistant.getText());
+                }
+            }
+            if (event.getType() == AgentEventType.TOOL_EXECUTION_START) {
+                String arguments = event.getArguments() == null ? "" : event.getArguments();
+                tell(activity, id, definition.name(), task, SubagentActivity.Kind.TOOL,
+                        (event.getToolName() == null ? "" : event.getToolName()) + "\n" + arguments);
+            }
+            if (event.getType() == AgentEventType.TOOL_EXECUTION_END) {
+                tell(activity, id, definition.name(), task, SubagentActivity.Kind.TOOL_RESULT,
+                        event.getResult() == null ? "" : event.getResult());
             }
             if (event.getType() == AgentEventType.AGENT_END && event.isStepLimitReached()) {
                 limited.set(true);
             }
         });
-        child.prompt(task);
+        try {
+            child.prompt(task);
+        } catch (RuntimeException exception) {
+            tell(activity, id, definition.name(), task, SubagentActivity.Kind.FAILED,
+                    exception.getMessage() == null ? "子代理执行失败" : exception.getMessage());
+            throw exception;
+        }
         if (child.getState() == AgentState.ERROR) {
             String reason = text.toString().isBlank()
                     ? "子代理 " + definition.name() + " 执行失败"
                     : text.toString();
+            tell(activity, id, definition.name(), task, SubagentActivity.Kind.FAILED, reason);
             throw new IllegalStateException(reason);
         }
         String result = cap(text.toString());
         if (limited.get()) {
             result = result + "\n（已达到子代理步数上限）";
         }
+        tell(activity, id, definition.name(), task, SubagentActivity.Kind.FINISHED, result);
         return result;
+    }
+
+    private static void tell(Consumer<SubagentActivity> activity,
+                             String id,
+                             String agent,
+                             String task,
+                             SubagentActivity.Kind kind,
+                             String detail) {
+        if (activity == null) {
+            return;
+        }
+        try {
+            activity.accept(new SubagentActivity(id, agent, task, kind, detail));
+        } catch (RuntimeException ignored) {
+            // 展示失败不能打断子代理
+        }
     }
 
     private static List<AgentTool> select(List<AgentTool> tools, List<String> allow) {

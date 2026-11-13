@@ -9,6 +9,7 @@ import org.jotaro.jotarocode.agent.runtime.AssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.BeforeToolCallResult;
 import org.jotaro.jotarocode.agent.runtime.PendingMessageQueue;
 import org.jotaro.jotarocode.agent.runtime.RunControl;
+import org.jotaro.jotarocode.agent.runtime.SubagentActivity;
 import org.jotaro.jotarocode.agent.runtime.SubagentScope;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +99,7 @@ public class PiAgent {
     private volatile boolean running;
     private volatile AgentState state = AgentState.IDLE;
     private volatile Function<AgentLoopRequest.BeforeToolCallContext, BeforeToolCallResult> beforeToolCall;
+    private volatile Consumer<SubagentActivity> subagentActivity;
 
     public PiAgent(String systemPrompt,
                    List<AgentTool> tools,
@@ -151,6 +153,10 @@ public class PiAgent {
 
     public void setBeforeToolCall(Function<AgentLoopRequest.BeforeToolCallContext, BeforeToolCallResult> beforeToolCall) {
         this.beforeToolCall = beforeToolCall;
+    }
+
+    public void setSubagentActivity(Consumer<SubagentActivity> subagentActivity) {
+        this.subagentActivity = subagentActivity;
     }
 
     public boolean isRunning() {
@@ -225,7 +231,7 @@ public class PiAgent {
     }
 
     private void executeLoop() {
-        SubagentScope.run(new SubagentScope.Context(model, beforeToolCall), this::runLoop);
+        SubagentScope.run(new SubagentScope.Context(model, beforeToolCall, subagentActivity), this::runLoop);
     }
 
     private void runLoop() {
