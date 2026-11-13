@@ -202,8 +202,17 @@ class SingleColumnLineReaderTest {
         type(reader, "/model deepseek-chat");
         assertTrue(reader.getWidgets().get("jotaro-cancel").apply());
         assertEquals("/model deepseek-chat", reader.getBuffer().toString());
+    }
 
-        SingleColumnLineReader plain = modelReader();
+    @Test
+    void controlCClearsTheDraftWithoutEndingTheRead() throws Exception {
+        assertEquals("next", read("draft\u0003\u0003next\n"));
+    }
+
+    @Test
+    void controlCInterruptsAnActiveRun() throws Exception {
+        SingleColumnLineReader plain = new SingleColumnLineReader(reader().getTerminal(), () -> true);
+        plain.installInteractionKeys();
         type(plain, "hello");
         assertTrue(plain.getWidgets().get("jotaro-interrupt").apply());
         assertTrue(plain.interrupted());

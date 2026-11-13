@@ -28,10 +28,6 @@ final class PromptStyle {
         return color("245") + text + reset();
     }
 
-    static String user(String text) {
-        return "\u001b[1m❯ " + text + "\u001b[22m";
-    }
-
     static String right(String model) {
         if (model == null || model.isBlank()) {
             return null;

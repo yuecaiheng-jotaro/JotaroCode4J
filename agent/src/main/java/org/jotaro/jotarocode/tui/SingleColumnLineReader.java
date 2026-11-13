@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 /**
  * 补全候选按一列往下排。JLine 默认按终端宽度把短名字横着铺开，
@@ -43,8 +44,15 @@ final class SingleColumnLineReader extends LineReaderImpl {
     private String footerText = "";
     private final PasteChunks pastes = new PasteChunks();
 
+    private final BooleanSupplier runActive;
+
     SingleColumnLineReader(Terminal terminal) {
+        this(terminal, () -> false);
+    }
+
+    SingleColumnLineReader(Terminal terminal, BooleanSupplier runActive) {
         super(terminal, "jotaro", new HashMap<>());
+        this.runActive = runActive;
     }
 
     /**
@@ -53,7 +61,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
      * 模型名写进输入后不再按这个全名收窄列表，上下键始终在全部模型之间移动。
      * 已经填完整、没有后续参数的斜杠命令，上下键仍然回溯历史。
      * 候选列表开着时，Esc 或 Ctrl+C 取消这次选择，把输入恢复成列表打开前的内容，并收起列表。
-     * 没有候选列表时，Ctrl+C 仍记成中断，交给外层停掉当前运行。Ctrl+Z 直接结束进程。
+     * 没有候选列表时，Ctrl+C 在运行中交给外层中止任务，空闲时原地清空输入。Ctrl+Z 直接结束进程。
      * 以 {@code /} 开头的命令不进历史。
      */
     void installInteractionKeys() {
@@ -245,7 +253,13 @@ final class SingleColumnLineReader extends LineReaderImpl {
             cancelSlashSelection();
             return true;
         }
-        state = State.INTERRUPT;
+        if (runActive.getAsBoolean()) {
+            state = State.INTERRUPT;
+            return true;
+        }
+        buf.clear();
+        clearSlashList();
+        doAutosuggestion = false;
         return true;
     }
 
