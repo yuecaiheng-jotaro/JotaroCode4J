@@ -1,0 +1,77 @@
+src/main/java/org/jotaro/jotarocode/config/PiAgentProperties.java
+  s_a06df77ee2692f::t_1e3a41ab71fd70 22-23
+src/main/java/org/jotaro/jotarocode/agent/subagent/SubagentDefinition.java
+  s_a06df77ee2692f::t_a9c0e56bf866a6 1-16
+src/main/java/org/jotaro/jotarocode/tui/SingleColumnLineReader.java
+  s_a06df77ee2692f::t_ec0a3f706d2649 495-530
+  s_a06df77ee2692f::t_75549ccd687af0 22
+src/main/java/org/jotaro/jotarocode/agent/PiAgent.java
+  s_a06df77ee2692f::t_3ded36db911f40 85-93
+  s_a06df77ee2692f::t_3a115e22670bee 12
+  s_a06df77ee2692f::t_ec306231357bb6 203
+  s_a06df77ee2692f::t_b30d295c97c17c 228-231
+  s_a06df77ee2692f::t_12b0e0388dcb80 143-151
+  s_a06df77ee2692f::t_bb8db80cd1f6c0 108-117,124
+src/main/java/org/jotaro/jotarocode/agent/PiAgentFactory.java
+  s_a06df77ee2692f::t_72b8bdb51ad6aa 7
+  s_a06df77ee2692f::t_b2f446fb041b9d 66,74-75
+  s_a06df77ee2692f::t_85061bfeedc3da 45-52
+  s_a06df77ee2692f::t_ea0cc5dd48e7c8 111
+README.md
+  s_a06df77ee2692f::t_af099cf3e90cd1 134,138
+  s_a06df77ee2692f::t_46aa88ac1826f0 99
+src/test/java/org/jotaro/jotarocode/agent/subagent/SubagentCatalogTest.java
+  s_a06df77ee2692f::t_52fd3420d4b433 75,78-81,83,85
+  s_a06df77ee2692f::t_9a32eb5a8625e9 1-74,76-77,82,84,86-87
+src/main/java/org/jotaro/jotarocode/agent/runtime/SubagentScope.java
+  s_a06df77ee2692f::t_36f4cb57a2f6c2 1-55
+src/main/java/org/jotaro/jotarocode/agent/subagent/SubagentCatalog.java
+  s_a06df77ee2692f::t_b60df0069b3c4c 1-217
+src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoop.java
+  s_a06df77ee2692f::t_90fdc20ebace14 307,309,323
+src/main/java/org/jotaro/jotarocode/tui/PromptStyle.java
+  s_a06df77ee2692f::t_c306fc7df5dc91 5
+  s_a06df77ee2692f::t_36fa4e6529f5bf 29-81
+src/main/java/org/jotaro/jotarocode/tui/AgentEventFormatter.java
+  s_a06df77ee2692f::t_837a9472a06c31 11-13
+  s_a06df77ee2692f::t_d9cb728f3c76b6 73-84
+src/test/java/org/jotaro/jotarocode/tui/PromptStyleTest.java
+  s_a06df77ee2692f::t_1361ec2ee128a8 8
+  s_a06df77ee2692f::t_e030cbe247e97c 26-51
+src/test/java/org/jotaro/jotarocode/agent/subagent/SubagentRunnerTest.java
+  s_a06df77ee2692f::t_d61650d173b38b 36
+  s_a06df77ee2692f::t_851adfd2318110 134
+  s_a06df77ee2692f::t_7005f30b83a607 1-35,37-133,135-183
+src/main/java/org/jotaro/jotarocode/agent/subagent/SubagentRunner.java
+  s_a06df77ee2692f::t_aea82d17535a29 1-270
+src/test/java/org/jotaro/jotarocode/tui/AgentEventFormatterTest.java
+  s_a06df77ee2692f::t_6d566cb2822145 28-39
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_a06df77ee2692f::t_7d38c4d140b07c 232
+  s_a06df77ee2692f::t_c02189aaea62cd 40-41,43,45
+  s_a06df77ee2692f::t_43a920f4ee15ea 4-5
+  s_a06df77ee2692f::t_6fb71a494cbef1 55,62,67
+  s_a06df77ee2692f::t_36ec6e1afc62e2 145-149
+  s_a06df77ee2692f::t_f4f22fd442f794 98-103,113-117,122-144
+  s_a06df77ee2692f::t_f238bf5e259490 21-23
+src/main/java/org/jotaro/jotarocode/agent/tools/SubagentTool.java
+  s_a06df77ee2692f::t_50a78df3ddff65 1-119
+src/main/java/org/jotaro/jotarocode/agent/runtime/RunControl.java
+  s_a06df77ee2692f::t_c1b348ea5cdc73 42-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "92dd05bf17f1da1235a19ece73a4a3cb67c60a00",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
