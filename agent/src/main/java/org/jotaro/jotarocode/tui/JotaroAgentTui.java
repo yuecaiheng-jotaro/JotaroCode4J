@@ -287,8 +287,7 @@ public final class JotaroAgentTui {
             return;
         }
         try {
-            agent.useStreamer(new SpringAiAssistantStreamer(chatClient));
-            agent.useModel(model);
+            agent.useModel(model, new SpringAiAssistantStreamer(chatClient));
             this.model = model;
             printLines(reader, List.of("已切换到 " + model));
         } catch (IllegalStateException exception) {

@@ -13,8 +13,7 @@ spring:
         version: 0.0.1
         type: SYNC
         request-timeout: 60s
-        annotation-scanner:
-          enabled: false
+        # 不要关掉 annotation-scanner。同步客户端依赖它创建的 ClientMcpSyncHandlersRegistry。
         # 下面不写 connections 时，不会启动任何 MCP 进程，内置工具照常可用。
         # stdio:
         #   connections:
@@ -34,6 +33,12 @@ spring:
         #     remote:
         #       url: http://127.0.0.1:3000
         #       endpoint: /mcp
+
+# 没有 sampling / elicitation 方法时，扫描器会打两条警告。这里压掉。
+logging:
+  level:
+    org.springaicommunity.mcp.provider.sampling: ERROR
+    org.springaicommunity.mcp.provider.elicitation: ERROR
 
 # 允许 rag 查询的知识库。不写 bases 时不提供 rag。name 为 ALL 时查全部。
 # 写了一个具体库就默认用它；写了多个时必须传入 knowledgeBase。

@@ -38,6 +38,26 @@ class JotaroAgentTest {
     }
 
     @Test
+    void eachPromptGetsItsOwnStepBudget() {
+        AtomicInteger calls = new AtomicInteger();
+        JotaroAgent agent = new JotaroAgent(
+                "system",
+                List.of(),
+                (messages, tools, systemPrompt, control, onTextDelta) ->
+                        AssistantTurn.of(new AssistantMessage("reply " + calls.incrementAndGet()), StopReason.STOP),
+                1,
+                20,
+                ToolExecutionMode.SEQUENTIAL
+        );
+
+        agent.prompt("first");
+        agent.prompt("second");
+
+        assertEquals(2, calls.get());
+        assertEquals("reply 2", agent.getMessages().get(4).getText());
+    }
+
+    @Test
     void inputDuringARunIsSteeredIntoTheNextTurn() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);

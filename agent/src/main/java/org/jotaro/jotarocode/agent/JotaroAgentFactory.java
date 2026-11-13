@@ -95,19 +95,16 @@ public class JotaroAgentFactory {
         if (StringUtils.hasText(bases)) {
             resolvedPrompt = resolvedPrompt + "\n\n" + bases;
         }
-        ChatClient chatClient = chatClientRegistry.get(resolvedModel);
-        if (chatClient == null) {
-            throw new BizException("未找到模型: " + resolvedModel);
-        }
+        SpringAiAssistantStreamer streamer = streamerFor(resolvedModel);
         JotaroAgent agent = new JotaroAgent(
                 resolvedPrompt,
                 tools,
-                new SpringAiAssistantStreamer(chatClient),
+                streamer,
                 properties.getMaxSteps(),
                 properties.getMessageWindow(),
                 ToolExecutionMode.PARALLEL
         );
-        agent.useModel(resolvedModel);
+        agent.useModel(resolvedModel, streamer);
         return agent;
     }
 
@@ -162,15 +159,19 @@ public class JotaroAgentFactory {
 
     public void switchModel(JotaroAgent agent, String model) {
         String resolvedModel = StringUtils.hasText(model) ? model : properties.getModel();
-        ChatClient chatClient = chatClientRegistry.get(resolvedModel);
-        if (chatClient == null) {
-            throw new BizException("未找到模型: " + resolvedModel);
-        }
+        SpringAiAssistantStreamer streamer = streamerFor(resolvedModel);
         try {
-            agent.useStreamer(new SpringAiAssistantStreamer(chatClient));
-            agent.useModel(resolvedModel);
+            agent.useModel(resolvedModel, streamer);
         } catch (IllegalStateException exception) {
             throw new BizException(exception.getMessage());
         }
+    }
+
+    private SpringAiAssistantStreamer streamerFor(String model) {
+        ChatClient chatClient = chatClientRegistry.get(model);
+        if (chatClient == null) {
+            throw new BizException("未找到模型: " + model);
+        }
+        return new SpringAiAssistantStreamer(chatClient);
     }
 }

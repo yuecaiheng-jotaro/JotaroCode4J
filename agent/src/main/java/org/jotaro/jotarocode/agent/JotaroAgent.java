@@ -134,21 +134,13 @@ public class JotaroAgent {
         listeners.add(listener);
     }
 
-    public void useStreamer(AssistantStreamer streamer) {
-        synchronized (runLock) {
-            if (running) {
-                throw new IllegalStateException("Agent 正在运行，不能切换模型");
-            }
-            this.streamer = streamer;
-        }
-    }
-
-    public void useModel(String model) {
+    public void useModel(String model, AssistantStreamer streamer) {
         synchronized (runLock) {
             if (running) {
                 throw new IllegalStateException("Agent 正在运行，不能切换模型");
             }
             this.model = model;
+            this.streamer = streamer;
         }
     }
 
@@ -215,10 +207,10 @@ public class JotaroAgent {
                 (followUp ? followUpQueue : steeringQueue).enqueue(message);
                 return false;
             }
-            running = true;
             state = AgentState.THINKING;
             messages.add(message);
             runControl = sharedControl != null ? sharedControl : new RunControl();
+            running = true;
             return true;
         }
     }
