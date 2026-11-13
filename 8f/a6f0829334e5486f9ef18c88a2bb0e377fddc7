@@ -1,0 +1,81 @@
+rag/src/main/java/org/jotaro/rag/config/RagProperties.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-41
+rag/pom.xml
+  s_a06df77ee2692f::t_b4f56d1ad2646b 1-49
+rag/src/main/java/org/jotaro/rag/web/RagController.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-77
+rag/src/test/java/org/jotaro/rag/retrieval/http/RetrieverParseTest.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-36
+rag/src/main/java/org/jotaro/rag/index/PostgresVectors.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-22
+rag/src/main/java/org/jotaro/rag/index/Chunker.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-64
+pom.xml
+  s_a06df77ee2692f::t_ea0952a7a00221 14,16,18-19,21-24,27,34,38-42
+rag/src/main/java/org/jotaro/rag/retrieval/http/GraphRetriever.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-115
+rag/src/main/java/org/jotaro/rag/web/ApiErrors.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-16
+rag/src/main/java/org/jotaro/rag/retrieval/Retriever.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-16
+rag/src/main/java/org/jotaro/rag/retrieval/RetrievalQuery.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-7
+rag/src/test/java/org/jotaro/rag/index/ChunkerTest.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-21
+rag/src/test/java/org/jotaro/rag/index/KnowledgeSearchTest.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-49
+rag/src/main/java/org/jotaro/rag/retrieval/RetrievalHit.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-17
+rag/src/main/java/org/jotaro/rag/embed/Embedder.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-12
+rag/src/main/java/org/jotaro/rag/embed/NoopEmbedder.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-28
+agent/src/main/java/org/jotaro/jotarocode/config/PiAgentProperties.java
+  s_a06df77ee2692f::t_3e78ca1b3e48fd 26
+rag/src/main/resources/application.yaml
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-35
+rag/src/main/java/org/jotaro/rag/retrieval/http/ElasticsearchRetriever.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-94
+rag/src/main/java/org/jotaro/rag/RagApplication.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-15
+rag/src/main/java/org/jotaro/rag/retrieval/Rrf.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-34
+rag/src/main/resources/static/index.html
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-193
+.gitignore
+  s_a06df77ee2692f::t_f7575ec1006c25 5-6
+rag/src/test/java/org/jotaro/rag/retrieval/RrfTest.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-26
+rag/src/main/resources/schema.sql
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-33
+agent/pom.xml
+  s_a06df77ee2692f::t_5ef6b7eaefc66c 1-72
+rag/src/main/java/org/jotaro/rag/retrieval/postgres/PostgresRetriever.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-128
+rag/src/main/java/org/jotaro/rag/index/KnowledgeService.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-156
+README.md
+  s_a06df77ee2692f::t_47ac668bf2efa6 6,13-15,17-19,22-26,28,31-34,37
+  s_a06df77ee2692f::t_2698ffebebd2d7 157
+  s_a06df77ee2692f::t_8650e402806b9e 210
+  s_a06df77ee2692f::t_1931e60c1388e5 153
+  s_a06df77ee2692f::t_b9436a0acd3d82 218-219
+rag/src/main/java/org/jotaro/rag/retrieval/HybridSearch.java
+  s_a06df77ee2692f::t_2cdebcb709f6df 1-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "8fa6f0829334e5486f9ef18c88a2bb0e377fddc7",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
