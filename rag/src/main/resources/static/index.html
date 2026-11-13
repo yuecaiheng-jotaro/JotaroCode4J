@@ -3,69 +3,365 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jotaro RAG</title>
+  <title>Jotaro 知识库</title>
   <style>
-    :root { color-scheme: light dark; font-family: "Iowan Old Style", Palatino, Georgia, serif; }
-    body { margin: 0; background: Canvas; color: CanvasText; }
-    header, main { max-width: 980px; margin: 0 auto; padding: 24px; }
-    header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid color-mix(in srgb, CanvasText 18%, transparent); }
-    h1 { font-size: 22px; font-weight: 500; margin: 0; }
-    h2 { font-size: 16px; font-weight: 500; margin: 0 0 12px; }
-    .routes { font-size: 13px; opacity: 0.75; }
-    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 28px; }
-    button, input, textarea, select { font: inherit; color: inherit; background: Canvas; border: 1px solid color-mix(in srgb, CanvasText 30%, transparent); border-radius: 6px; }
-    button { padding: 6px 12px; cursor: pointer; }
-    input, textarea, select { width: 100%; padding: 8px; box-sizing: border-box; }
-    textarea { min-height: 140px; resize: vertical; }
-    form { display: grid; gap: 8px; margin-bottom: 18px; }
-    ul { list-style: none; padding: 0; margin: 0; }
-    li { padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, CanvasText 12%, transparent); }
-    .base { display: flex; justify-content: space-between; gap: 8px; }
-    .base button { border: 0; background: transparent; padding: 0; text-align: left; }
-    .base.active button { font-weight: 600; }
-    .hit { margin: 0 0 14px; }
-    .meta { font-size: 12px; opacity: 0.7; font-family: ui-monospace, monospace; }
-    .error { color: #9b2c2c; min-height: 1.2em; }
-    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+    :root {
+      --ink: #1c1915;
+      --paper: #f3efe6;
+      --card: #fffdf8;
+      --line: #e3d9c8;
+      --muted: #746b60;
+      --accent: #b45309;
+      --accent-soft: #fff4e5;
+      --good: #3f6212;
+      --bad: #9f1239;
+      --sidebar: #1c1915;
+      --sidebar-text: #f6f1e7;
+      --sidebar-muted: #b7ad9f;
+      --sidebar-line: rgba(246, 241, 231, 0.12);
+      --sans: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", sans-serif;
+      --serif: "Iowan Old Style", Palatino, "Songti SC", serif;
+      --mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    aside {
+      background: var(--sidebar);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 22px 18px 16px;
+    }
+    .brand { display: flex; gap: 12px; align-items: center; margin-bottom: 22px; }
+    .mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: grid; place-items: center;
+      background: #e8ff6a; color: var(--ink);
+      font-family: var(--serif); font-size: 20px;
+    }
+    .brand strong { display: block; font-size: 16px; letter-spacing: 0.02em; }
+    .brand span { color: var(--sidebar-muted); font-size: 12px; }
+    .side-label {
+      margin: 0 0 8px;
+      color: var(--sidebar-muted);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    #bases { list-style: none; padding: 0; margin: 0; overflow: auto; flex: 1; }
+    #bases li { margin: 0 0 4px; }
+    #bases button.base-btn {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      border-radius: 10px;
+      padding: 10px 10px 9px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 8px;
+    }
+    #bases button.base-btn small { grid-column: 1 / -1; color: var(--sidebar-muted); font-size: 12px; }
+    #bases li.active button.base-btn { background: rgba(232, 255, 106, 0.14); }
+    #bases .count { color: var(--sidebar-muted); font-family: var(--mono); font-size: 12px; }
+    #base-form { display: grid; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sidebar-line); }
+    aside input {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--sidebar-line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--sidebar-text);
+    }
+    aside input::placeholder { color: #8d8478; }
+    aside button[type="submit"], .primary, .ghost, .danger {
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 8px 12px;
+    }
+    aside button[type="submit"], .primary { background: #e8ff6a; color: var(--ink); border-color: #e8ff6a; }
+    .ghost { background: transparent; border-color: var(--line); }
+    .danger { background: transparent; border-color: #fecdd3; color: var(--bad); }
+    main { min-width: 0; min-height: 0; overflow: auto; padding: 22px 28px 40px; }
+    .top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    h1 { font-family: var(--serif); font-size: 32px; font-weight: 500; margin: 0; letter-spacing: -0.02em; }
+    .desc { margin: 4px 0 0; color: var(--muted); }
+    .stats { display: flex; gap: 18px; margin-top: 12px; }
+    .stats div strong { display: block; font-family: var(--mono); font-size: 18px; }
+    .stats div span, .muted { color: var(--muted); font-size: 12px; }
+    .routes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .pill, .badge {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: transparent;
+    }
+    .pill.on { color: var(--good); border-color: #d9f99d; background: #f7fee7; }
+    .tabs { display: flex; gap: 6px; margin: 18px 0; }
+    .tabs button {
+      border: 0; background: transparent; color: var(--muted);
+      padding: 8px 12px; border-radius: 999px;
+    }
+    .tabs button.active { background: var(--ink); color: var(--paper); }
+    #error {
+      background: #fff1f2; color: var(--bad); border-radius: 10px;
+      padding: 10px 12px; margin-bottom: 12px;
+    }
+    .welcome {
+      margin-top: 48px;
+      max-width: 460px;
+    }
+    .welcome h2 { font-family: var(--serif); font-weight: 500; font-size: 28px; margin: 0 0 8px; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr); gap: 18px; align-items: start; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+    form.stack, .stack { display: grid; gap: 10px; }
+    label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+    textarea { min-height: 220px; resize: vertical; line-height: 1.65; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid #e8ff6a; border-color: transparent; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .hint { color: var(--muted); font-size: 12px; margin: 0; }
+    .chunk {
+      border-top: 1px solid var(--line);
+      padding: 10px 0;
+    }
+    .chunk header, .hit header, .doc-head, .stage-head {
+      display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+    }
+    .chunk pre, .hit pre, .original {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 8px 0 0;
+    }
+    .chunk pre, .hit pre { max-height: 9.6em; overflow: auto; }
+    .chunk pre.open, .hit pre.open, .original { max-height: none; }
+    .mono { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    tr.doc { cursor: pointer; }
+    tr.doc.active { background: var(--accent-soft); }
+    .stage-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .summary-item {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: grid;
+      gap: 2px;
+    }
+    .summary-item strong { font-size: 13px; }
+    .summary-item span { color: var(--muted); font-size: 12px; }
+    .summary-item.skipped { opacity: 0.72; }
+    .summary-item.failed { border-color: #fecdd3; }
+    .summary-item.failed span { color: var(--bad); }
+    .stage { margin-top: 14px; }
+    .stage-quiet {
+      display: flex; justify-content: space-between; gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .stage-quiet.failed { color: var(--bad); }
+    .hit {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .rank {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      margin-right: 8px;
+    }
+    .score { height: 3px; background: #efe6d6; border-radius: 99px; margin-top: 8px; }
+    .score > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+    .final {
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 16px;
+      padding: 16px 16px 6px;
+    }
+    .final .muted, .final .mono { color: #c9bfb0; }
+    .final .hint { color: #c9bfb0; }
+    .final .hit { border-bottom-color: rgba(246, 241, 231, 0.12); }
+    .final .ghost { border-color: rgba(246, 241, 231, 0.2); color: var(--paper); }
+    .final .score { background: rgba(246, 241, 231, 0.12); }
+    .final .score > span { background: #e8ff6a; }
+    .kicker { margin: 0; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #e8ff6a; }
+    .filter { max-width: 280px; }
+    @media (max-width: 960px) {
+      body { display: block; height: auto; }
+      aside { min-height: auto; }
+      main { overflow: visible; }
+      .grid, .top { display: block; }
+      .routes { justify-content: flex-start; margin-top: 12px; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <h1>Jotaro RAG</h1>
-  <div class="routes" id="routes"></div>
-</header>
-<main class="layout">
-  <section>
-    <h2>知识库</h2>
-    <form id="base-form">
-      <input name="name" placeholder="名称，例如 handbook" required pattern="[a-z0-9][a-z0-9-]{0,62}">
-      <input name="description" placeholder="说明，可空">
-      <button type="submit">新建</button>
-    </form>
-    <ul id="bases"></ul>
+<aside>
+  <div class="brand">
+    <div class="mark">J</div>
+    <div>
+      <strong>Jotaro</strong>
+      <span>知识库</span>
+    </div>
+  </div>
+  <p class="side-label">Bases</p>
+  <ul id="bases"></ul>
+  <form id="base-form">
+    <input name="name" placeholder="名称，例如 handbook" required pattern="[a-z0-9][a-z0-9-]{0,62}" autocomplete="off">
+    <input name="description" placeholder="说明，可空" autocomplete="off">
+    <button type="submit">新建知识库</button>
+  </form>
+</aside>
+<main>
+  <section id="welcome" class="welcome">
+    <h2>先选一个知识库</h2>
+    <p class="desc">左侧可以新建。建好之后，在这里分段入库、查看表里的原文，并用一条查询看每一阶段召回了什么。</p>
   </section>
-  <section>
-    <h2 id="current">先选一个知识库</h2>
-    <p class="error" id="error"></p>
-    <form id="doc-form" hidden>
-      <input name="title" placeholder="标题" required>
-      <input name="source" placeholder="来源，可空">
-      <textarea name="content" placeholder="正文" required></textarea>
-      <button type="submit">写入</button>
-    </form>
-    <ul id="documents"></ul>
-    <form id="search-form" hidden>
-      <input name="query" placeholder="检索" required>
-      <button type="submit">搜索</button>
-    </form>
-    <div id="hits"></div>
+  <section id="workspace" hidden>
+    <div class="top">
+      <div>
+        <h1 id="base-name"></h1>
+        <p class="desc" id="base-desc"></p>
+        <div class="stats">
+          <div><strong id="stat-docs">0</strong><span>文档</span></div>
+          <div><strong id="stat-chunks">0</strong><span>分段</span></div>
+          <div><strong id="stat-embedded">0</strong><span>有向量</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="routes" id="routes"></div>
+        <div class="actions" style="margin-top:10px;justify-content:flex-end">
+          <button type="button" class="danger" id="delete-base">删除这个库</button>
+        </div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button type="button" data-tab="write" class="active">写入</button>
+      <button type="button" data-tab="store">库内数据</button>
+      <button type="button" data-tab="probe">检索验证</button>
+    </nav>
+    <p id="error" hidden></p>
+
+    <section id="panel-write">
+      <div class="grid">
+        <form id="write-form" class="card stack">
+          <h2>写入文档</h2>
+          <label>标题<input name="title" required placeholder="例如 登录流程"></label>
+          <label>来源<input name="source" placeholder="例如 auth.md，可空"></label>
+          <label>正文<textarea name="content" required placeholder="贴进要入库的原文"></textarea></label>
+          <p class="hint" id="content-count">0 字</p>
+          <label>分段方式
+            <select name="mode">
+              <option value="length" selected>按字数</option>
+              <option value="delimiter">按分隔符</option>
+            </select>
+          </label>
+          <div class="pair" data-chunk="length">
+            <label>分段长度<input name="chunkSize" type="number" min="200" max="8000" value="700"></label>
+            <label>重叠<input name="chunkOverlap" type="number" min="0" max="4000" value="80"></label>
+          </div>
+          <p class="hint" data-chunk="length">短段落会合并到接近这个长度。超长段落按这个长度切开，相邻两段保留重叠。</p>
+          <label data-chunk="delimiter" hidden>分隔符<input name="delimiter" placeholder="例如 --- 或 \n\n"></label>
+          <p class="hint" data-chunk="delimiter" hidden>遇到这个分隔符就切开，空段会丢掉。\n 表示换行。</p>
+          <div class="actions">
+            <button type="button" class="ghost" id="preview-btn">预览分段</button>
+            <button type="submit" class="primary">写入</button>
+          </div>
+        </form>
+        <section class="card" id="preview">
+          <h2>分段预览</h2>
+          <p class="hint">还没预览。改完正文或长度后，这里会列出即将写入 chunk 表的每一段。</p>
+        </section>
+      </div>
+    </section>
+
+    <section id="panel-store" hidden>
+      <div class="card">
+        <h2>document / chunk</h2>
+        <p class="hint">点开一篇文档，查看库里保存的原文和每一行分段。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>标题</th>
+              <th>来源</th>
+              <th>段数</th>
+              <th>分段</th>
+              <th>原文字数</th>
+              <th>写入时间</th>
+            </tr>
+          </thead>
+          <tbody id="documents"></tbody>
+        </table>
+        <div id="detail"></div>
+      </div>
+    </section>
+
+    <section id="panel-probe" hidden>
+      <form id="probe-form" class="card stack">
+        <h2>检索验证</h2>
+        <label>查询<input name="query" required placeholder="输入要召回的词或句子"></label>
+        <label>Top N<input name="limit" type="number" min="1" max="20" value="5"></label>
+        <div class="actions">
+          <button type="submit" class="primary">开始验证</button>
+          <span class="hint">只查当前知识库。每一阶段最多返回这么多条。</span>
+        </div>
+      </form>
+      <div id="probe-result"></div>
+    </section>
   </section>
 </main>
 <script>
-const state = { base: "" };
-const error = document.getElementById("error");
+const state = { base: "", tab: "write", doc: "", detail: null, bases: [] };
+const errorNode = document.getElementById("error");
 
-function fail(message) { error.textContent = message || ""; }
+function fail(message) {
+  errorNode.hidden = !message;
+  errorNode.textContent = message || "";
+}
+function show(exception) { fail(exception.message || String(exception)); }
+
 async function api(url, options) {
   const response = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
   const text = await response.text();
@@ -74,119 +370,432 @@ async function api(url, options) {
   return body;
 }
 
+function h(tag, props, children) {
+  const node = document.createElement(tag);
+  Object.entries(props || {}).forEach(([key, value]) => {
+    if (value == null) return;
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2).toLowerCase(), value);
+    else node.setAttribute(key, value);
+  });
+  (children || []).forEach(child => node.append(child instanceof Node ? child : document.createTextNode(String(child))));
+  return node;
+}
+
+function ordinal(index) {
+  return "#" + String(index + 1).padStart(2, "0");
+}
+
+function formatScore(score) {
+  if (!Number.isFinite(score)) return "";
+  const abs = Math.abs(score);
+  const digits = abs > 0 && abs < 0.01 ? 6 : abs < 10 ? 4 : 2;
+  return score.toFixed(digits);
+}
+
 async function loadRoutes() {
   const routes = await api("/api/routes");
-  document.getElementById("routes").textContent = routes
-    .map(route => route.name + (route.enabled ? " 开" : " 关"))
-    .join(" · ");
+  const node = document.getElementById("routes");
+  node.replaceChildren(...routes.map(route => h("span", { class: route.enabled ? "pill on" : "pill" }, [
+    route.name + (route.enabled ? " 开" : " 关")
+  ])));
 }
 
 async function loadBases() {
-  const bases = await api("/api/bases");
+  state.bases = await api("/api/bases");
   const list = document.getElementById("bases");
-  list.replaceChildren();
-  for (const base of bases) {
-    const item = document.createElement("li");
-    item.className = "base" + (base.name === state.base ? " active" : "");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = base.name;
-    button.onclick = () => select(base.name);
-    const count = document.createElement("span");
-    count.className = "meta";
-    count.textContent = String(base.documents);
-    item.append(button, count);
-    list.append(item);
-  }
+  list.replaceChildren(...state.bases.map(base => {
+    const item = h("li", { class: base.name === state.base ? "active" : "" });
+    const button = h("button", { type: "button", class: "base-btn", onclick: () => select(base.name) }, [
+      base.name,
+      h("span", { class: "count" }, [String(base.chunks)]),
+      h("small", null, [(base.description || "没有说明") + " · " + base.documents + " 篇"])
+    ]);
+    item.append(button);
+    return item;
+  }));
+  paintBase();
 }
 
-// 切换知识库时清空上次命中，后续入库和检索都使用当前库名。
+function paintBase() {
+  const base = state.bases.find(item => item.name === state.base);
+  document.getElementById("workspace").hidden = !base;
+  document.getElementById("welcome").hidden = !!base;
+  if (!base) return;
+  document.getElementById("base-name").textContent = base.name;
+  document.getElementById("base-desc").textContent = base.description || "没有说明";
+  document.getElementById("stat-docs").textContent = String(base.documents);
+  document.getElementById("stat-chunks").textContent = String(base.chunks);
+  document.getElementById("stat-embedded").textContent = String(base.embedded);
+}
+
 async function select(name) {
   state.base = name;
-  document.getElementById("current").textContent = name;
-  document.getElementById("doc-form").hidden = false;
-  document.getElementById("search-form").hidden = false;
-  document.getElementById("hits").replaceChildren();
+  fail("");
   await loadBases();
-  const documents = await api("/api/bases/" + encodeURIComponent(name) + "/documents");
-  const list = document.getElementById("documents");
-  list.replaceChildren();
-  for (const doc of documents) {
-    const item = document.createElement("li");
-    const title = document.createElement("div");
-    title.textContent = doc.title + " · " + doc.chunks + " 段";
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.textContent = "删除";
-    remove.onclick = async () => {
-      await api("/api/documents/" + doc.id, { method: "DELETE" }).catch(show);
-      select(name);
-    };
-    item.append(title, remove);
-    list.append(item);
+  if (state.tab === "store") await loadDocuments();
+}
+
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll(".tabs button").forEach(button => {
+    button.classList.toggle("active", button.dataset.tab === tab);
+  });
+  document.getElementById("panel-write").hidden = tab !== "write";
+  document.getElementById("panel-store").hidden = tab !== "store";
+  document.getElementById("panel-probe").hidden = tab !== "probe";
+  if (tab === "store") loadDocuments().catch(show);
+}
+
+document.querySelectorAll(".tabs button").forEach(button => {
+  button.addEventListener("click", () => switchTab(button.dataset.tab));
+});
+
+function chunkOptions(form) {
+  return {
+    mode: form.mode.value,
+    chunkSize: Number(form.chunkSize.value),
+    chunkOverlap: Number(form.chunkOverlap.value),
+    delimiter: form.delimiter.value
+  };
+}
+
+function syncChunkMode(form) {
+  const mode = form.mode.value;
+  form.querySelectorAll("[data-chunk]").forEach(node => {
+    node.hidden = node.dataset.chunk !== mode;
+  });
+}
+
+function showDelimiter(value) {
+  return String(value || "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("\r", "\\r")
+    .replaceAll("\n", "\\n")
+    .replaceAll("\t", "\\t");
+}
+
+function chunkLabel(spec) {
+  if (spec.mode === "delimiter" || spec.chunkMode === "delimiter") {
+    const delimiter = spec.delimiter || spec.chunkDelimiter || "";
+    return "分隔符 " + showDelimiter(delimiter);
+  }
+  return (spec.chunkSize ?? spec.size) + " / " + (spec.chunkOverlap ?? spec.overlap);
+}
+
+function renderPieces(target, preview) {
+  target.replaceChildren(
+    h("h2", null, ["分段预览"]),
+    h("p", { class: "hint" }, [
+      preview.mode === "delimiter"
+        ? "按分隔符切开，共 " + preview.chunks.length + " 段"
+        : "实际按 " + preview.chunkSize + " 字切，重叠 " + preview.chunkOverlap + "，共 " + preview.chunks.length + " 段"
+    ])
+  );
+  preview.chunks.forEach(piece => target.append(chunkBlock(piece.ordinal, piece.chars, false, "", piece.content)));
+  if (!preview.chunks.length) target.append(h("p", { class: "hint" }, ["没有切出分段"]));
+}
+
+function chunkBlock(index, chars, embedded, id, content) {
+  const body = h("pre", { class: content.length <= 400 ? "open" : "" }, [content]);
+  const toggle = h("button", { type: "button", class: "ghost", onclick: () => body.classList.toggle("open") }, ["展开"]);
+  const meta = [ordinal(index), chars + " 字"];
+  if (embedded) meta.push("有向量");
+  if (id) meta.push(id);
+  return h("article", { class: "chunk" }, [
+    h("header", null, [h("span", { class: "mono" }, [meta.join(" · ")]), toggle]),
+    body
+  ]);
+}
+
+let previewTimer;
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => runPreview().catch(show), 450);
+}
+
+async function runPreview() {
+  const form = document.getElementById("write-form");
+  const content = String(new FormData(form).get("content") || "");
+  document.getElementById("content-count").textContent = content.trim().length + " 字";
+  const target = document.getElementById("preview");
+  if (!content.trim()) {
+    target.replaceChildren(h("h2", null, ["分段预览"]), h("p", { class: "hint" }, ["正文是空的"]));
+    return;
+  }
+  if (form.mode.value === "delimiter" && !String(form.delimiter.value || "").trim()) {
+    target.replaceChildren(h("h2", null, ["分段预览"]), h("p", { class: "hint" }, ["先填写分隔符"]));
+    return;
+  }
+  const preview = await api("/api/chunks/preview", {
+    method: "POST",
+    body: JSON.stringify({ content, ...chunkOptions(form) })
+  });
+  renderPieces(target, preview);
+}
+
+document.getElementById("preview-btn").onclick = () => runPreview().catch(show);
+document.getElementById("write-form").addEventListener("input", event => {
+  if (event.target.name === "content") {
+    document.getElementById("content-count").textContent = event.target.value.trim().length + " 字";
+  }
+  if (["content", "chunkSize", "chunkOverlap", "delimiter"].includes(event.target.name)) schedulePreview();
+});
+document.getElementById("write-form").addEventListener("change", event => {
+  if (event.target.name === "mode") {
+    syncChunkMode(event.target.form);
+    schedulePreview();
+  }
+});
+
+document.getElementById("base-form").onsubmit = async event => {
+  event.preventDefault();
+  fail("");
+  const data = new FormData(event.target);
+  try {
+    await api("/api/bases", {
+      method: "POST",
+      body: JSON.stringify({ name: data.get("name"), description: data.get("description") })
+    });
+    event.target.reset();
+    await select(String(data.get("name")));
+    switchTab("write");
+  } catch (exception) { show(exception); }
+};
+
+document.getElementById("delete-base").onclick = async () => {
+  if (!state.base || !confirm("删除知识库 " + state.base + " ？文档和分段会一起删掉。")) return;
+  try {
+    await api("/api/bases/" + encodeURIComponent(state.base), { method: "DELETE" });
+    state.base = "";
+    state.doc = "";
+    state.detail = null;
+    fail("");
+    await loadBases();
+  } catch (exception) { show(exception); }
+};
+
+document.getElementById("write-form").onsubmit = async event => {
+  event.preventDefault();
+  fail("");
+  const form = event.target;
+  const data = new FormData(form);
+  try {
+    const saved = await api("/api/bases/" + encodeURIComponent(state.base) + "/documents", {
+      method: "POST",
+      body: JSON.stringify({
+        title: data.get("title"),
+        source: data.get("source"),
+        content: data.get("content"),
+        ...chunkOptions(form)
+      })
+    });
+    form.reset();
+    form.mode.value = "length";
+    form.chunkSize.value = "700";
+    form.chunkOverlap.value = "80";
+    form.delimiter.value = "";
+    syncChunkMode(form);
+    document.getElementById("content-count").textContent = "0 字";
+    document.getElementById("preview").replaceChildren(
+      h("h2", null, ["分段预览"]),
+      h("p", { class: "hint" }, ["已写入。到「库内数据」可以看到表里的原文和分段。"])
+    );
+    state.doc = saved.id;
+    await loadBases();
+    switchTab("store");
+    await openDoc(saved.id);
+  } catch (exception) { show(exception); }
+};
+
+async function loadDocuments() {
+  if (!state.base) return;
+  const documents = await api("/api/bases/" + encodeURIComponent(state.base) + "/documents");
+  const body = document.getElementById("documents");
+  if (!documents.length) {
+    body.replaceChildren(h("tr", null, [h("td", { colspan: "6" }, ["这个库还没有文档"])]));
+  } else {
+    body.replaceChildren(...documents.map(doc => {
+      const row = h("tr", { class: "doc" + (doc.id === state.doc ? " active" : ""), "data-id": doc.id, onclick: () => openDoc(doc.id).catch(show) }, [
+        h("td", null, [doc.title]),
+        h("td", null, [doc.source || "—"]),
+        h("td", { class: "mono" }, [String(doc.chunks)]),
+        h("td", { class: "mono" }, [chunkLabel(doc)]),
+        h("td", { class: "mono" }, [String(doc.chars)]),
+        h("td", { class: "mono" }, [doc.createdAt || ""])
+      ]);
+      return row;
+    }));
+  }
+  if (state.doc && documents.some(doc => doc.id === state.doc)) {
+    await openDoc(state.doc);
+  } else {
+    state.doc = "";
+    state.detail = null;
+    document.getElementById("detail").replaceChildren();
   }
 }
 
-function show(exception) { fail(exception.message); }
+async function openDoc(id) {
+  state.doc = id;
+  state.detail = await api("/api/documents/" + id);
+  document.querySelectorAll("#documents tr.doc").forEach(row => {
+    row.classList.toggle("active", row.getAttribute("data-id") === id);
+  });
+  await paintDetail();
+}
 
-document.getElementById("base-form").onsubmit = async (event) => {
-  event.preventDefault();
-  fail("");
-  const data = new FormData(event.target);
-  try {
-    await api("/api/bases", { method: "POST", body: JSON.stringify({
-      name: data.get("name"), description: data.get("description")
-    }) });
-    event.target.reset();
-    await select(String(data.get("name")));
-  } catch (exception) { show(exception); }
-};
-
-document.getElementById("doc-form").onsubmit = async (event) => {
-  event.preventDefault();
-  fail("");
-  const data = new FormData(event.target);
-  try {
-    await api("/api/bases/" + encodeURIComponent(state.base) + "/documents", {
+async function paintDetail() {
+  const detail = state.detail;
+  const root = document.getElementById("detail");
+  if (!detail) {
+    root.replaceChildren();
+    return;
+  }
+  const original = h("pre", { class: "original" }, [detail.content || "原文未保存。下面是已经入库的分段。"]);
+  const chunks = h("div");
+  const filter = h("input", { class: "filter", placeholder: "在分段里过滤", oninput: () => drawChunks(filter.value) });
+  function drawChunks(query) {
+    const matched = detail.chunks.filter(chunk => !query || chunk.content.includes(query));
+    chunks.replaceChildren(...matched.map(chunk => chunkBlock(chunk.ordinal, chunk.chars, chunk.embedded, chunk.id, chunk.content)));
+    if (!matched.length) chunks.append(h("p", { class: "hint" }, ["没有匹配的分段"]));
+  }
+  drawChunks("");
+  const rechunk = h("form", { class: "stack", onsubmit: event => applyRechunk(event), onchange: event => {
+    if (event.target.name === "mode") syncChunkMode(rechunk);
+  } }, [
+    h("label", null, ["分段方式", h("select", { name: "mode" }, [
+      h("option", { value: "length" }, ["按字数"]),
+      h("option", { value: "delimiter" }, ["按分隔符"])
+    ])]),
+    h("div", { class: "pair", "data-chunk": "length" }, [
+      h("label", null, ["分段长度", h("input", { name: "chunkSize", type: "number", min: "200", max: "8000", value: String(detail.chunkSize || 700) })]),
+      h("label", null, ["重叠", h("input", { name: "chunkOverlap", type: "number", min: "0", max: "4000", value: String(detail.chunkOverlap || 0) })])
+    ]),
+    h("label", { "data-chunk": "delimiter", hidden: "" }, ["分隔符", h("input", { name: "delimiter", value: detail.chunkMode === "delimiter" ? showDelimiter(detail.chunkDelimiter) : "", placeholder: "例如 --- 或 \\n\\n" })]),
+    h("div", { class: "actions" }, [
+      h("button", { type: "button", class: "ghost", onclick: () => previewRechunk().catch(show) }, ["预览重切"]),
+      h("button", { type: "submit", class: "primary" }, ["按这个规则重新写入"])
+    ])
+  ]);
+  rechunk.mode.value = detail.chunkMode === "delimiter" ? "delimiter" : "length";
+  syncChunkMode(rechunk);
+  const preview = h("div");
+  async function previewRechunk() {
+    const options = chunkOptions(rechunk);
+    const result = await api("/api/chunks/preview", {
       method: "POST",
-      body: JSON.stringify({ title: data.get("title"), source: data.get("source"), content: data.get("content") })
+      body: JSON.stringify({ content: detail.content, ...options })
     });
-    event.target.reset();
-    await select(state.base);
-  } catch (exception) { show(exception); }
-};
+    renderPieces(preview, result);
+  }
+  async function applyRechunk(event) {
+    event.preventDefault();
+    fail("");
+    try {
+      state.detail = await api("/api/documents/" + detail.id + "/rechunk", {
+        method: "POST",
+        body: JSON.stringify(chunkOptions(rechunk))
+      });
+      await loadBases();
+      await loadDocuments();
+    } catch (exception) { show(exception); }
+  }
+  const head = [
+    h("div", { class: "doc-head" }, [
+      h("h2", null, [detail.title]),
+      h("button", { type: "button", class: "danger", onclick: () => removeDoc(detail.id) }, ["删除文档"])
+    ]),
+    h("p", { class: "mono" }, [
+      detail.id + " · " + (detail.source || "无来源") + " · " + detail.createdAt
+      + " · 分段 " + chunkLabel(detail)
+    ]),
+    h("h2", null, ["原文"]),
+    original,
+    h("h2", null, ["chunk 表 · " + detail.chunks.length + " 行"]),
+    filter,
+    chunks
+  ];
+  if (detail.content) head.push(h("h2", null, ["重新分段"]), rechunk, preview);
+  root.replaceChildren(...head);
+}
 
-document.getElementById("search-form").onsubmit = async (event) => {
+async function removeDoc(id) {
+  if (!confirm("删除这篇文档和它的分段？")) return;
+  try {
+    await api("/api/documents/" + id, { method: "DELETE" });
+    state.doc = "";
+    state.detail = null;
+    await loadBases();
+    await loadDocuments();
+  } catch (exception) { show(exception); }
+}
+
+function hitCard(hit, rank, maxScore) {
+  const body = h("pre", null, [hit.content || ""]);
+  const width = maxScore > 0 && hit.score > 0 ? Math.max(4, (hit.score / maxScore) * 100) : 0;
+  return h("article", { class: "hit" }, [
+    h("header", null, [
+      h("div", null, [
+        h("span", { class: "rank" }, [ordinal(rank)]),
+        h("strong", null, [hit.title || "未命名"])
+      ]),
+      h("span", { class: "mono" }, [formatScore(Number(hit.score))])
+    ]),
+    h("div", { class: "mono" }, [(hit.route || "") + (hit.source ? " · " + hit.source : "") + (hit.id ? " · " + hit.id : "")]),
+    body,
+    h("button", { type: "button", class: "ghost", onclick: () => body.classList.toggle("open") }, ["展开"]),
+    h("div", { class: "score" }, [h("span", { style: "width:" + width + "%" })])
+  ]);
+}
+
+function renderHits(hits) {
+  if (!hits.length) return h("p", { class: "hint" }, ["这一阶段没有召回"]);
+  const maxScore = Math.max(...hits.map(hit => Number(hit.score) || 0));
+  return h("div", null, hits.map((hit, index) => hitCard(hit, index, maxScore)));
+}
+
+document.getElementById("probe-form").onsubmit = async event => {
   event.preventDefault();
   fail("");
   const data = new FormData(event.target);
+  const limit = Number(data.get("limit") || 5);
   try {
-    const result = await api("/api/search", {
+    const result = await api("/api/search/explain", {
       method: "POST",
-      body: JSON.stringify({ query: data.get("query"), knowledgeBase: state.base, limit: 5 })
+      body: JSON.stringify({ query: data.get("query"), knowledgeBase: state.base, limit })
     });
-    const hits = document.getElementById("hits");
-    hits.replaceChildren();
-    if (!result.hits.length) {
-      hits.textContent = "没有匹配。";
-      return;
-    }
-    for (const hit of result.hits) {
-      const block = document.createElement("article");
-      block.className = "hit";
-      // 检索内容来自入库文档，按纯文本渲染。
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.textContent = hit.route + " · " + Number(hit.score).toFixed(4) + (hit.source ? " · " + hit.source : "");
-      const title = document.createElement("strong");
-      title.textContent = hit.title || "未命名";
-      const body = document.createElement("p");
-      body.textContent = hit.content;
-      block.append(meta, title, body);
-      hits.append(block);
-    }
+    paintProbe(result, limit);
   } catch (exception) { show(exception); }
 };
+
+function paintProbe(result, limit) {
+  const root = document.getElementById("probe-result");
+  const hits = result.hits || [];
+  const stages = (result.stages || []).filter(stage => stage.name !== "混合排序");
+  const finalBlock = h("section", { class: "final" }, [
+    h("p", { class: "kicker" }, ["最终 Top " + limit]),
+    h("p", { class: "muted" }, ["混合排序后保留 " + hits.length + " 条"]),
+    hits.length ? renderHits(hits) : h("p", { class: "hint" }, ["没有召回"])
+  ]);
+  const summary = h("div", { class: "stage-summary" }, stages.map(stage => h("div", {
+    class: "summary-item " + (stage.status || "")
+  }, [
+    h("strong", null, [stage.name]),
+    h("span", null, [stage.status === "ok" ? ((stage.hits || []).length + " 条") : (stage.message || stage.status)])
+  ])));
+  const details = stages.filter(stage => stage.status === "ok").map(stage => {
+    return h("section", { class: "stage card" }, [
+      h("div", { class: "stage-head" }, [
+        h("h2", null, [stage.name]),
+        h("span", { class: "mono" }, [(stage.hits || []).length + " 条"])
+      ]),
+      stage.message ? h("p", { class: "hint" }, [stage.message]) : h("span"),
+      renderHits(stage.hits || [])
+    ]);
+  });
+  root.replaceChildren(finalBlock, summary, ...details);
+}
 
 loadRoutes().catch(show);
 loadBases().catch(show);

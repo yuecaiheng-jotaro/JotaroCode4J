@@ -21,6 +21,17 @@ class ToolQuestionnaireTest {
     }
 
     @Test
+    void mcpToolsAskToo() {
+        ToolQuestionnaire.remember(List.of("filesystem_read"));
+        try {
+            assertTrue(ToolQuestionnaire.needsAsk("filesystem_read"));
+            assertFalse(ToolQuestionnaire.needsAsk("read"));
+        } finally {
+            ToolQuestionnaire.remember(List.of());
+        }
+    }
+
+    @Test
     void parsesAllowDenyAndHint() {
         assertEquals(ToolQuestionnaire.Parsed.Kind.ALLOW_ONCE, ToolQuestionnaire.parse("y").kind());
         assertEquals(ToolQuestionnaire.Parsed.Kind.ALLOW_ALL, ToolQuestionnaire.parse("全部允许").kind());

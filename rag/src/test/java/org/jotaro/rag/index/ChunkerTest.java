@@ -18,4 +18,12 @@ class ChunkerTest {
         assertEquals(paragraph.substring(0, 700), parts.get(0));
         assertTrue(parts.get(1).startsWith(paragraph.substring(620, 700)));
     }
+
+    @Test
+    void splitsOnALiteralDelimiter() {
+        assertEquals(List.of("甲", "乙"), Chunker.splitByDelimiter("甲---乙", "---"));
+        assertEquals(List.of("甲", "乙"), Chunker.splitByDelimiter("甲\n\n乙", Chunker.unescape("\\n\\n")));
+        assertEquals(List.of("只有一段"), Chunker.splitByDelimiter("只有一段", "---"));
+        assertEquals(List.of("甲", "乙"), Chunker.splitByDelimiter("甲------乙", "---"));
+    }
 }

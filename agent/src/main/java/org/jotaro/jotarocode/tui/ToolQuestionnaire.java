@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -16,14 +17,19 @@ import java.util.Set;
 final class ToolQuestionnaire {
 
     static final Set<String> ASK = Set.of("bash", "powershell", "write", "edit");
+    private static volatile Set<String> extra = Set.of();
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final int PREVIEW_LIMIT = 400;
 
     private ToolQuestionnaire() {
     }
 
+    static void remember(Collection<String> names) {
+        extra = names == null || names.isEmpty() ? Set.of() : Set.copyOf(names);
+    }
+
     static boolean needsAsk(String toolName) {
-        return toolName != null && ASK.contains(toolName);
+        return toolName != null && (ASK.contains(toolName) || extra.contains(toolName));
     }
 
     static List<String> prompt(String toolName, String arguments) {

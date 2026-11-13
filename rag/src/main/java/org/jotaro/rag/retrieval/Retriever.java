@@ -13,4 +13,15 @@ public interface Retriever {
     boolean enabled();
 
     List<RetrievalHit> retrieve(RetrievalQuery query);
+
+    /**
+     * 这一路内部的各个阶段。默认只给出本路自己的排序。
+     * 只有 {@code feed} 为真的阶段会进入最终混合排序。
+     */
+    default List<RetrievalStage> stages(RetrievalQuery query) {
+        if (!enabled()) {
+            return List.of(new RetrievalStage(name(), "skipped", "未启用", false, List.of()));
+        }
+        return List.of(new RetrievalStage(name(), "ok", "", true, retrieve(query)));
+    }
 }

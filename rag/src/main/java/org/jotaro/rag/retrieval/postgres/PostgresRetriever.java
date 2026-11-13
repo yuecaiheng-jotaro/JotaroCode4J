@@ -4,6 +4,7 @@ import org.jotaro.rag.config.RagProperties;
 import org.jotaro.rag.embed.Embedder;
 import org.jotaro.rag.retrieval.RetrievalHit;
 import org.jotaro.rag.retrieval.RetrievalQuery;
+import org.jotaro.rag.retrieval.RetrievalStage;
 import org.jotaro.rag.retrieval.Retriever;
 import org.jotaro.rag.retrieval.Rrf;
 import jakarta.annotation.Resource;
@@ -71,29 +72,54 @@ public class PostgresRetriever implements Retriever {
 
     @Override
     public List<RetrievalHit> retrieve(RetrievalQuery query) {
+        for (RetrievalStage stage : stages(query)) {
+            if (stage.feed()) {
+                return stage.hits();
+            }
+        }
+        return List.of();
+    }
+
+    // 词法和向量分开返回，方便管理页对照每一阶段的原文。融合结果才进入外层混合排序。
+    @Override
+    public List<RetrievalStage> stages(RetrievalQuery query) {
+        if (!enabled()) {
+            return List.of(new RetrievalStage(name(), "skipped", "未加入混合检索", false, List.of()));
+        }
         if (query.text() == null || query.text().isBlank()) {
             return List.of();
         }
         List<RetrievalHit> lexical = query(LEXICAL, params(query));
-        List<RetrievalHit> vector = vector(query);
-        if (vector.isEmpty()) {
-            return lexical;
-        }
-        return Rrf.fuse(List.of(lexical, vector), properties.getRrfK(), query.limit());
+        VectorOutcome vector = vectorOutcome(query);
+        boolean hasVector = !vector.hits().isEmpty();
+        List<RetrievalHit> fused = hasVector
+                ? Rrf.fuse(List.of(lexical, vector.hits()), properties.getRrfK(), query.limit())
+                : lexical;
+        String fusionMessage = hasVector
+                ? "词法和向量按倒数排名融合，再交给混合排序"
+                : "向量没有召回，这一阶段与词法相同";
+        return List.of(
+                new RetrievalStage("postgres · 词法", "ok", "全文、三元组相似度和子串", false, lexical),
+                new RetrievalStage("postgres · 向量", vector.status(), vector.message(), false, vector.hits()),
+                new RetrievalStage("postgres · 融合", "ok", fusionMessage, true, fused)
+        );
     }
 
-    private List<RetrievalHit> vector(RetrievalQuery query) {
+    private VectorOutcome vectorOutcome(RetrievalQuery query) {
         if (!embedder.enabled()) {
-            return List.of();
+            return new VectorOutcome("skipped", "向量模型未开启", List.of());
         }
         try {
             float[] embedding = embedder.embed(query.text());
             MapSqlParameterSource params = params(query).addValue("embedding", vectorLiteral(embedding));
-            return query(VECTOR, params);
+            return new VectorOutcome("ok", "按余弦距离召回", query(VECTOR, params));
         } catch (RuntimeException exception) {
             log.warn("向量通道跳过: {}", exception.getMessage());
-            return List.of();
+            return new VectorOutcome("failed", exception.getMessage(), List.of());
         }
+    }
+
+    private record VectorOutcome(String status, String message, List<RetrievalHit> hits) {
     }
 
     private List<RetrievalHit> query(String sql, MapSqlParameterSource params) {

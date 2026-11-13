@@ -13,8 +13,20 @@ CREATE TABLE IF NOT EXISTS document (
     base_id uuid NOT NULL REFERENCES knowledge_base (id) ON DELETE CASCADE,
     title text NOT NULL,
     source text NOT NULL DEFAULT '',
+    content text NOT NULL DEFAULT '',
+    chunk_size integer NOT NULL DEFAULT 700,
+    chunk_overlap integer NOT NULL DEFAULT 80,
+    chunk_mode text NOT NULL DEFAULT 'length',
+    chunk_delimiter text NOT NULL DEFAULT '',
     created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- 已有的库补上原文字段和分段参数。CREATE TABLE 不会改已经存在的表。
+ALTER TABLE document ADD COLUMN IF NOT EXISTS content text NOT NULL DEFAULT '';
+ALTER TABLE document ADD COLUMN IF NOT EXISTS chunk_size integer NOT NULL DEFAULT 700;
+ALTER TABLE document ADD COLUMN IF NOT EXISTS chunk_overlap integer NOT NULL DEFAULT 80;
+ALTER TABLE document ADD COLUMN IF NOT EXISTS chunk_mode text NOT NULL DEFAULT 'length';
+ALTER TABLE document ADD COLUMN IF NOT EXISTS chunk_delimiter text NOT NULL DEFAULT '';
 
 -- 分段保留知识库 ID 便于过滤，删除文档时由外键清理对应分段。
 CREATE TABLE IF NOT EXISTS chunk (

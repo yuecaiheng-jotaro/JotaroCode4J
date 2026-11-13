@@ -139,10 +139,7 @@ mvn -pl rag spring-boot:run -Dspring-boot.run.skip=false
 
 默认连接 `jdbc:postgresql://127.0.0.1:5432/jotaro_rag`，密码由 `RAG_DB_PASSWORD` 提供。连接地址和用户可用 `SPRING_DATASOURCE_URL`、`SPRING_DATASOURCE_USERNAME` 覆盖。
 
-打开 [知识库管理页](http://127.0.0.1:8090)，创建知识库并录入正文，再用关键词搜索。
-
-![知识库管理页，在 project-notes 检索 SSE 并返回带来源的文档片段](docs/assets/rag-web.png)
-
+打开 [知识库管理页](http://127.0.0.1:8090)，可以建库、按字数或自定义分隔符分段入库、查看库里的原文和分段，并在检索验证里看最终 Top N 和每一阶段的召回。
 也可以用 API 完成同一组操作。
 
 ```bash
@@ -159,7 +156,7 @@ curl -fsS http://127.0.0.1:8090/api/search \
   -d '{"query":"SSE","knowledgeBase":"project-notes","limit":3}'
 ```
 
-回到 Agent，输入「用 `rag` 查一下 `project-notes` 里 SSE 的连接顺序，并注明命中的文档标题」。两套应用通过 HTTP 通信，Agent 侧的地址由 `jotaro.rag.base-url` 控制。
+回到 Agent，输入「用 `rag` 查一下 `project-notes` 里 SSE 的连接顺序，并注明命中的文档标题」。两套应用通过 HTTP 通信，Agent 侧的地址由 `jotaro.rag.base-url` 控制。可查询哪些库由 `jotaro.rag.bases` 配置：不配时不提供 `rag`；`name` 为 `ALL` 时查全部；配了一个具体库就默认用它；配了多个时模型必须传入库名。
 
 默认 PostgreSQL 通路结合全文、三元组相似度和子串匹配。向量检索需要注册 `Embedder` 并开启 `rag.embedding.enabled`，输出维度需匹配 `vector(1024)`。Elasticsearch 和 GraphQL 检索器由各自的 `enabled` 开关启用，并读取各自的外部索引或接口。入库 API 写入 PostgreSQL。混合检索用 RRF 合并排名，片段标识按通路和 ID 组合。
 
@@ -189,8 +186,8 @@ curl -fsS http://127.0.0.1:8090/api/search \
 
 ![RAG 数据流图，展示文档事务入库、PostgreSQL 与可选外部检索、RRF 排序及结果回流模型](docs/assets/rag-data-flow.png)
 
-- **入库**。管理页提交标题、正文和来源。服务在同一事务内写入文档及分段。分段上限默认 700 个字符，超长段落切分时保留 80 个字符的重叠。
-- **检索**。Agent 的 `rag` 工具向 RAG 服务发送 `query` 和可选的 `knowledgeBase`。默认查询 PostgreSQL。启用外部通路后，混合检索按各路排名融合，单路失败时仍可使用其余通路。
+- **入库**。管理页提交标题、正文和来源，分段可以按字数，也可以按自定义分隔符切开。按字数时默认 700 个字符、重叠 80。短段落会合并，超长段落按这个长度切开。分隔符按字面匹配，`\n` 表示换行。
+- **检索**。Agent 的 `rag` 工具向 RAG 服务发送 `query` 和 `knowledgeBase`。没有配置 `jotaro.rag.bases` 时不提供这个工具。`name` 为 `ALL` 时可以查全部。配置了多个具体库时必须指定库名，不在名单里的库不会被查询。管理页的检索验证调用 `/api/search/explain`，分开显示词法、向量、通路融合和最终混合排序。默认查询 PostgreSQL。启用外部通路后，混合检索按各路排名融合，单路失败时仍可使用其余通路。
 - **回流**。检索 API 返回标题、正文、来源、通路和得分。管理页直接展示命中，`RagClient` 把标题、正文、通路和得分格式化为工具结果，随消息窗口进入后续模型请求。
 
 ## 工具和扩展
@@ -202,8 +199,26 @@ curl -fsS http://127.0.0.1:8090/api/search \
 | `bash`、`powershell` | 在工作目录执行命令。默认超时 120 秒，PowerShell 优先使用 `pwsh` |
 | `currentTime`、`terminate` | 读取本地时间、结束工具驱动的继续调用 |
 | `subagent`、`rag` | 委派任务、从独立知识库服务检索片段 |
+| MCP | 启动时连上配置的 MCP 服务，把它们的工具并进同一次会话 |
 
 `read` 默认最多返回 2,000 行或 50 KB，可用 `offset` 和 `limit` 续读。新增工具时，实现 [ToolContributor](agent/src/main/java/org/jotaro/jotarocode/agent/tools/ToolContributor.java)，注册为 Spring 组件，在方法上声明 `@Tool`。新增检索通路则实现 [Retriever](rag/src/main/java/org/jotaro/rag/retrieval/Retriever.java) 并注册组件。
+
+MCP 写在 `spring.ai.mcp.client` 下，支持 stdio、SSE 和 Streamable HTTP。不写 `connections` 时不会拉起外部进程。工具名是「服务自己报的名字 + 工具名」，例如 `filesystem_list_dir`。终端里调用这些工具前会像 Bash 一样询问。示例：
+
+```yaml
+spring:
+  ai:
+    mcp:
+      client:
+        stdio:
+          connections:
+            filesystem:
+              command: npx
+              args:
+                - -y
+                - "@modelcontextprotocol/server-filesystem"
+                - .
+```
 
 ## 子代理和技能
 
@@ -290,4 +305,5 @@ mvn -pl rag -Dtest=ChunkerTest,RrfTest,RetrieverParseTest test  # RAG 纯单元�
 | `jotaro.message-window` | `40` | 发给模型的最近消息窗口 |
 | `jotaro.system-prompt` | 见属性类 | 工具使用说明，创建 Agent 时拼入技能目录 |
 | `jotaro.rag.base-url` | `http://127.0.0.1:8090` | 知识库服务地址 |
+| `jotaro.rag.bases` | 空 | 允许查询的知识库，每项有 `name` 和 `description`。空列表不提供 `rag`，`name: ALL` 表示查全部 |
 | `rag.rrf-k` | `60` | 倒数排名融合常数 |

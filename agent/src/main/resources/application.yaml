@@ -6,3 +6,39 @@ spring:
       - local
   application:
     name: JotaroCode
+  ai:
+    mcp:
+      client:
+        name: jotaro
+        version: 0.0.1
+        type: SYNC
+        request-timeout: 60s
+        annotation-scanner:
+          enabled: false
+        # 下面不写 connections 时，不会启动任何 MCP 进程，内置工具照常可用。
+        # stdio:
+        #   connections:
+        #     filesystem:
+        #       command: npx
+        #       args:
+        #         - -y
+        #         - "@modelcontextprotocol/server-filesystem"
+        #         - .
+        # sse:
+        #   connections:
+        #     remote:
+        #       url: http://127.0.0.1:3000
+        #       sse-endpoint: /sse
+        # streamable-http:
+        #   connections:
+        #     remote:
+        #       url: http://127.0.0.1:3000
+        #       endpoint: /mcp
+
+# 允许 rag 查询的知识库。不写 bases 时不提供 rag。name 为 ALL 时查全部。
+# 写了一个具体库就默认用它；写了多个时必须传入 knowledgeBase。
+# jotaro:
+#   rag:
+#     bases:
+#       - name: ALL
+#         description: 全部知识库
