@@ -28,6 +28,7 @@ public class SseServiceImpl implements SseService {
     public SseEmitter connect(String sessionId) {
         SseEmitter emitter = new SseEmitter(30 * 60 * 1000L);
         clients.put(sessionId, emitter);
+        // 按连接实例移除，旧连接结束时不会误删已经登记的新连接。
         emitter.onCompletion(() -> clients.remove(sessionId, emitter));
         emitter.onTimeout(() -> clients.remove(sessionId, emitter));
         emitter.onError(error -> clients.remove(sessionId, emitter));

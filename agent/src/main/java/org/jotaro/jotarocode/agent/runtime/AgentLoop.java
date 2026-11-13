@@ -42,10 +42,10 @@ public final class AgentLoop {
     }
 
     private void doRun() {
-        // 开跑前先取走已经排队的 steering，避免用户在启动瞬间插的话被丢掉。一次只取一条消息
+        // 启动时先取一条已排队的 steering，让它随首轮请求进入模型上下文。
         List<Message> pending = new ArrayList<>(drain(request.getSteeringMessages()));
 
-        // 【hook-1】turn开始前的hook，进入loop前
+        // AGENT_START 标记整次运行，后面可能有多个 TURN_START。
         emit(AgentEvent.of(AgentEventType.AGENT_START));
 
         // finishTurn 返回 CONTINUE 时，即使没有工具也要再向模型要一轮。
@@ -54,10 +54,10 @@ public final class AgentLoop {
             // 内层持续到：模型不再要工具，并且没有待插入的 steering。
             boolean hasMoreToolCalls = true;
             while (hasMoreToolCalls || !pending.isEmpty()) {
-                // 【hook-2】loop中，每个turn开始前
+                // TURN_START 先于本轮插入的用户消息，供界面开启一轮新的展示。
                 emit(AgentEvent.of(AgentEventType.TURN_START));
 
-                // 放入loop的message里，即当前react循环里的消息
+                // 先把待处理消息写入对话，再计算本轮发给模型的窗口。
                 appendPending(pending);
                 pending = new ArrayList<>();
 
@@ -70,13 +70,11 @@ public final class AgentLoop {
                     finish(true);
                     return;
                 }
-                // 处理当前turn
                 AssistantTurn turn = streamAssistant();
 
-                // 处理完当前turn，内部存置loop的列表里
                 messages.add(turn.getMessage());
 
-                // 【hook-2】llm 推理结束
+                // 先发布完整的助手消息，再执行它请求的工具。
                 emit(AgentEvent.builder()
                         .type(AgentEventType.MESSAGE_END)
                         .message(turn.getMessage())
@@ -208,6 +206,7 @@ public final class AgentLoop {
             return List.copyOf(messages);
         }
         int start = messages.size() - window;
+        // 工具响应需要前面的助手调用才能配对，因此窗口起点可以向前扩一条。
         while (start > 0 && messages.get(start) instanceof ToolResponseMessage) {
             start--;
         }
@@ -233,6 +232,7 @@ public final class AgentLoop {
             AgentTool tool = findTool(call.name());
             return tool != null && tool.executionMode() == ToolExecutionMode.SEQUENTIAL;
         });
+        // 工具完成事件可以乱序到达，回给模型的结果按原始调用位置组装。
         ToolOutcome[] slots = new ToolOutcome[toolCalls.size()];
         List<Integer> readyIndexes = new ArrayList<>();
         List<PreparedCall> ready = new ArrayList<>();
@@ -304,6 +304,7 @@ public final class AgentLoop {
 
     private List<ToolOutcome> executeParallel(List<PreparedCall> prepared) {
         List<CompletableFuture<ToolOutcome>> futures = new ArrayList<>();
+        // 线程池不会继承线程局部变量，在工作线程上显式恢复子代理上下文和取消控制。
         SubagentScope.Context scope = SubagentScope.current();
         for (PreparedCall call : prepared) {
             futures.add(CompletableFuture.supplyAsync(() -> SubagentScope.call(scope, () -> {

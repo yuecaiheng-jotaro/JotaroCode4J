@@ -38,6 +38,7 @@ public final class PiAgentTui {
     private volatile String model;
     private final AgentEventFormatter formatter = new AgentEventFormatter();
     private final SubagentPane subagents = new SubagentPane();
+    // 模型循环运行在后台，读行线程仍能处理确认、追加指令和中断。
     private final java.util.concurrent.ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "pi-agent-tui");
         thread.setDaemon(true);

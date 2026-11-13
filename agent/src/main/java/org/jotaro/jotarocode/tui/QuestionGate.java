@@ -45,6 +45,7 @@ final class QuestionGate {
         }
         printer.accept(ToolQuestionnaire.prompt(toolName, context.getArguments()));
         try {
+            // 运行线程在这里等待，终端读行线程通过 answer 或 cancel 解除等待。
             return future.get();
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();

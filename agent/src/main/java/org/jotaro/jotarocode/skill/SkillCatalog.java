@@ -101,6 +101,7 @@ public class SkillCatalog {
     }
 
     List<Skill> load(List<Path> roots) {
+        // 按 locations 的顺序扫描，同名技能由第一个有效定义占用。
         Map<String, Skill> skills = new LinkedHashMap<>();
         for (Path root : roots) {
             scan(root, true, skills);

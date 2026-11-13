@@ -252,6 +252,7 @@
       const created = await post("/api/sessions", { model });
       sessionId = created.sessionId;
       if (created.model) modelSelect.value = created.model;
+      // 每个会话有独立的事件流，消息提交接口只返回接收结果。
       source = new EventSource(`/api/sessions/${sessionId}/events`);
       source.addEventListener("message", (event) => {
         try {
@@ -277,6 +278,7 @@
         scrollDown();
       }
       if (event.type === "MESSAGE_END" && event.role === "assistant") {
+        // 结束事件带完整文本。收到过增量时，气泡已有正文。
         if (!streamed && event.text) {
           hideEmpty();
           assistantNode = assistantNode || addBubble("assistant", "");
@@ -300,6 +302,7 @@
         scrollDown();
       }
       if (event.type === "TOOL_EXECUTION_END") {
+        // 工具可以并行完成，用调用 ID 把结果更新到对应卡片。
         const node = (event.toolCallId && tools.get(event.toolCallId)) || thread.querySelector(".tool:last-of-type");
         if (!node) return;
         if (event.error) node.classList.add("error");

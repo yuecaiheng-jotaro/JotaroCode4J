@@ -1,220 +1,259 @@
-# Jotaro Agent
-用java重写pi agent
+<div align="center">
 
-一个用 Spring AI 写的编程 Agent。网页和终端是两种入口，背后是同一个循环：模型回复一次，循环执行它点名的工具，再把结果送回去，直到它不再要工具。
+# ⚡ Jotaro Agent
 
-需要 Java 17 和 Maven。仓库里是两个应用：`agent` 是编程助手，`rag` 是知识库管理端。密钥放环境变量，不要写进仓库。
+**用 Java 和 Spring AI 实现的 Pi 风格编程助手**
+
+在终端边跑边调整任务，在网页实时看模型与工具的输出，也能从自己的知识库检索项目资料。
+
+![Java 17+](https://img.shields.io/badge/Java-17%2B-ED8B00?style=flat-square)
+![Spring Boot 3.5](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?style=flat-square)
+![Spring AI 1.1](https://img.shields.io/badge/Spring_AI-1.1-6DB33F?style=flat-square)
+![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square)
+
+[快速开始](#快速开始) · [终端体验](#终端体验) · [知识库](#知识库) · [架构](#架构) · [HTTP API](#http-api) · [开发与测试](#开发与测试)
+
+</div>
+
+## 你可以用它做什么
+
+- **读懂一个陌生仓库**。让 Agent 搜索入口、读关键文件，并按路径给出一条可追踪的调用链。
+- **在执行过程中改变方向**。在终端补一句「先只看检索模块」，当前工具批次结束后，指令就会进入下一次模型请求。
+- **把独立任务交给子代理**。让 `explore` 只读调查，或用 `general` 处理需要工具执行的任务。终端会把子代理的活动显示在对应任务下。
+- **带着团队资料写代码**。把架构笔记、操作手册或接口说明录入知识库，再让 Agent 用 `rag` 检索相关片段和来源。
+
+## 快速开始
+
+需要 **JDK 17+** 和 **Maven**。先在仓库根目录配置默认模型。以下命令为 Bash / Zsh 写法。
 
 ```bash
-export DEEPSEEK_API_KEY=你的密钥
-# 可选
-# export ZHIPU_API_KEY=你的密钥
-# export DASHSCOPE_API_KEY=你的密钥
-```
+read -rs 'DEEPSEEK_API_KEY?DeepSeek API key: '  # Zsh
+export DEEPSEEK_API_KEY
+export SPRING_AI_DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY"
 
-开发时在仓库根目录启动。两个进程互不包含，要同时用就开两个终端。
+# Spring 启动时同时装配三个供应商。只使用 DeepSeek 时，另外两个可先用占位值。
+export SPRING_AI_ZHIPUAI_API_KEY="${ZHIPU_API_KEY:-unused}"
+export SPRING_AI_OPENAI_API_KEY="${DASHSCOPE_API_KEY:-unused}"
 
-```bash
-mvn -pl rag spring-boot:run
 mvn -pl agent spring-boot:run
 ```
 
-Agent 页面在 http://127.0.0.1:8080 ，知识库页面在 http://127.0.0.1:8090 。终端不监听端口，同一次启动不能又开网页：
+在 Bash 中，用 `read -rsp 'DeepSeek API key: ' DEEPSEEK_API_KEY` 输入密钥。打开 [Agent 网页](http://127.0.0.1:8080)，可以试一句：
+
+> 先列出这个仓库的模块，找到模型与工具循环的入口。只读文件，最后给我一条带文件路径的阅读路线。
+
+两个应用可以独立运行：
+
+| 应用 | 默认入口 | 负责什么 |
+| --- | --- | --- |
+| `agent` | [127.0.0.1:8080](http://127.0.0.1:8080) 或终端 | 会话、模型调用、工具调度、流式事件 |
+| `rag` | [127.0.0.1:8090](http://127.0.0.1:8090) | 知识库管理、文档入库、混合检索 |
+
+### 模型切换
+
+模型名称来自 [ChatClient Bean](agent/src/main/java/org/jotaro/jotarocode/config/MultiChatClientConfig.java)。可在网页下拉框或终端 `/model` 中切换。
+
+| 会话模型名 | 供应商 | 密钥环境变量 |
+| --- | --- | --- |
+| `deepseek-chat` | DeepSeek | `SPRING_AI_DEEPSEEK_API_KEY` |
+| `glm-4.6` | 智谱 | `SPRING_AI_ZHIPUAI_API_KEY` |
+| `qwen4-max-preview` | DashScope OpenAI 兼容接口 | `SPRING_AI_OPENAI_API_KEY` |
+
+使用表中的供应商时，将对应变量设为有效密钥。使用 Qwen 时还需将 OpenAI 兼容客户端指向账号对应的 DashScope 端点，并配置模型，例如：
 
 ```bash
-mvn -pl agent spring-boot:run -Dspring-boot.run.arguments=--tui
+export SPRING_AI_OPENAI_BASE_URL=https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode
+export SPRING_AI_OPENAI_CHAT_OPTIONS_MODEL=qwen4-max-preview
 ```
 
-打包成两个可执行 jar。测试会一起跑；只打包时加上 `-DskipTests`。
+也可把配置放在本地的 `agent/src/main/resources/application-local.yaml`。仓库忽略这个文件，`application.yaml` 会激活 `local` profile。环境变量适用于全新克隆。
+
+### 打包和启动
 
 ```bash
 mvn -DskipTests package
-java -jar rag/target/jotaro-rag-0.0.1-SNAPSHOT.jar
-java -jar agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar
-java -jar agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar --tui
+java -jar agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar        # 网页
+java -jar agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar --tui  # 终端，单独启动
+java -jar rag/target/jotaro-rag-0.0.1-SNAPSHOT.jar             # 需要已就绪的数据库
 ```
 
-`java -jar` 时的当前目录就是 Agent 工具看到的工作目录，在仓库根执行即可。
+以 `java -jar` 启动时，Agent 工具从当前工作目录解析相对路径。希望它读取其他项目时，先切到该项目目录，再用 jar 的绝对路径启动。TUI 使用独立进程且不监听 Web 端口。
 
-## 结构
+## 终端体验
+
+<pre>
+● explore
+  → find  查找 AgentLoop
+  → read  阅读循环与事件出口
+  ⎿ 完成
+
+╭─ steer ────────────────────────────────────────
+│ 先只梳理工具执行和取消逻辑
+╰─ deepseek-chat ────────────────────────────────
+</pre>
+
+上面是界面示意。空闲时输入框显示 `jotaro`，运行时切为 `steer`。普通输入会在当前工具批次结束后插入。网页运行中的发送按钮用于停止，HTTP 客户端可通过队列接口追加消息。
+
+| 操作 | 用法 |
+| --- | --- |
+| 列出命令 | `/help`，或键入 `/` 后用上下键选择 |
+| 切换模型 | `/model` 或 `/model glm-4.6` |
+| 停止、重置、退出 | `/abort`、`/reset`、`/exit` 或 `/quit` |
+| 键盘操作 | Tab 补全，右方向键或 Ctrl+E 接受灰色建议，Ctrl+C 中断，Ctrl+D 退出 |
+| 粘贴 | 超过 5 行或 800 字时显示摘要，提交时恢复原文。Ctrl+V 可从剪贴板粘贴图片，模型需要支持图片输入 |
+
+终端在 `bash`、`powershell`、`write`、`edit` 前询问。输入 `y` 允许这次，`a` 允许本会话后续调用，`n` 拒绝。输入其他文字会阻止本次调用，并把文字作为反馈返回。
+
+## 知识库
+
+RAG 服务需要可连接的 PostgreSQL，以及可用于当前 PostgreSQL 版本的 **pgvector** 和 **pg_trgm** 扩展。启动时执行 [schema.sql](rag/src/main/resources/schema.sql)，初始化表、扩展和索引。以下示例使用当前系统用户名作为 PostgreSQL 角色，角色需要能创建库及初始化扩展。
+
+```bash
+createdb -h 127.0.0.1 -p 5432 jotaro_rag
+mvn -pl rag spring-boot:run
+```
+
+默认连接 `jdbc:postgresql://127.0.0.1:5432/jotaro_rag`，密码由 `RAG_DB_PASSWORD` 提供。连接地址和用户可用 `SPRING_DATASOURCE_URL`、`SPRING_DATASOURCE_USERNAME` 覆盖。
+
+打开 [知识库管理页](http://127.0.0.1:8090)，也可以直接用 API 完成一次「建库 → 入库 → 检索」：
+
+```bash
+curl -fsS http://127.0.0.1:8090/api/bases \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"project-notes","description":"项目开发笔记"}'
+
+curl -fsS http://127.0.0.1:8090/api/bases/project-notes/documents \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"会话事件","source":"docs/events.md","content":"网页先建立 SSE 连接，再提交用户消息。"}'
+
+curl -fsS http://127.0.0.1:8090/api/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"SSE","knowledgeBase":"project-notes","limit":3}'
+```
+
+回到 Agent，输入「用 `rag` 查一下 `project-notes` 里 SSE 的连接顺序，并注明来源」。两套应用通过 HTTP 通信，Agent 侧的地址由 `piagent.rag.base-url` 控制。
+
+默认 PostgreSQL 通路结合全文、三元组相似度和子串匹配。向量检索需要注册 `Embedder` 并开启 `rag.embedding.enabled`，输出维度需匹配 `vector(1024)`。Elasticsearch 和 GraphQL 检索器由各自的 `enabled` 开关启用，并读取各自的外部索引或接口。入库 API 写入 PostgreSQL。混合检索用 RRF 合并排名，片段标识按通路和 ID 组合。
+
+## 架构
 
 ```mermaid
 flowchart LR
-  page[网页]
-  tui[终端]
-  session[会话服务]
-  agent[PiAgent]
-  loop[AgentLoop]
-  model[ChatClient]
-  tools[工具]
-
-  page -->|POST 立刻返回| session
-  page -->|SSE| session
-  tui -->|直接调用| agent
-  session --> agent
-  agent --> loop
-  loop --> model
-  loop --> tools
-  loop -->|事件| agent
-  agent -->|SSE 或 printAbove| page
-  agent -->|printAbove| tui
+    Web["网页"] -->|"提交消息"| Session["会话服务"]
+    TUI["JLine 终端"] --> Agent["PiAgent"]
+    Session -->|"异步运行"| Agent
+    Agent --> Loop["AgentLoop"]
+    Loop <-->|"流式回复"| Model["Spring AI ChatClient"]
+    Loop <-->|"调用与结果"| Tools["工具"]
+    Tools -->|"rag · HTTP"| RAG["知识库服务"]
+    RAG --> DB[("PostgreSQL")]
+    RAG -.-> Other["Elasticsearch / GraphQL"]
+    Loop -->|"事件"| Agent
+    Agent -->|"SSE"| Web
+    Agent -->|"终端渲染"| TUI
 ```
 
-网页把消息丢进后台线程，回答从 SSE 推回来。终端的读行留在主线程，`prompt` 跑在另一条线程上，所以运行中还能继续打字。会话存在内存里，进程退出就没了。
+[PiAgent](agent/src/main/java/org/jotaro/jotarocode/agent/PiAgent.java) 保存会话历史和消息队列。[AgentLoop](agent/src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoop.java) 每轮发起一次流式模型请求，把工具结果放回历史再继续。Spring AI 负责模型适配，运行时负责执行工具、发事件和传播取消。
 
-建议从 `src/main/java/org/jotaro/jotarocode/package-info.java` 读起，然后看 `agent/runtime/AgentLoop.java`。每个包的 `package-info.java` 说明它在这条链路里的位置。
+- 同一批工具默认并行。批次含要求顺序执行的工具时，整批改为顺序执行。结果按模型给出的调用顺序组装。
+- `STEER` 在轮次之间检查，`FOLLOW_UP` 在循环即将结束时检查。两条队列每次各取一条。模型没有后续工具、调用 `terminate`、达到步数限制或被中止时，循环按相应条件收尾。
+- 会话历史在进程内保存。模型只收到配置窗口内的最近消息，系统提示和窗口边界的工具调用配对会保留。
 
-## 一轮循环
+### 工具和扩展
 
-一轮等于一次模型响应，加上它发起的全部工具调用。`max-steps` 数的是助手消息条数，默认 20。`message-window` 是发给模型的最近消息数，默认 40，更早的内容仍留在会话里，系统提示会保留。
-
-Spring AI 的自动执行是关掉的。工具定义会发给模型，真正调用留在 `AgentLoop`，这样才有中止、并行和 `terminate`。
-
-```mermaid
-flowchart TD
-  start[收到用户消息] --> ask[流式请求模型]
-  ask --> calls{有工具调用}
-  calls -->|没有| follow{还有 follow-up}
-  calls -->|有| exec[执行工具，默认并行]
-  exec --> stop{其中有 terminate}
-  stop -->|否| ask
-  stop -->|是| follow
-  follow -->|有| ask
-  follow -->|没有| done[结束]
-```
-
-运行中再来的普通消息进入 steering，当前轮工具结束后插入。follow-up 要等到循环快停才插入。两条队列每次只取最早的一条。名叫 `terminate` 的工具会结束继续向模型要下一轮。
-
-## 网页
-
-打开页面时先拉模型和技能，创建会话，然后立刻用 `EventSource` 订阅 `/api/sessions/{id}/events`。必须先连上，否则开头的事件没有接收方。
-
-```mermaid
-sequenceDiagram
-  participant 页面
-  participant HTTP
-  participant 后台线程
-  participant PiAgent
-
-  页面->>HTTP: POST /sessions
-  HTTP-->>页面: sessionId
-  页面->>HTTP: GET /events，连接保持
-  页面->>HTTP: POST /messages
-  HTTP-->>页面: code 200，这时还没有回答
-  HTTP->>后台线程: PromptEvent
-  后台线程->>PiAgent: prompt
-  PiAgent-->>页面: SSE，事件名 message
-```
-
-用户气泡是本地先画的。`MESSAGE_UPDATE` 的 `text` 是增量，拼到当前助手气泡上。如果已经拼过增量，就不要再追加 `MESSAGE_END` 里的全文。运行中按钮变成「停止」，再点是中止，不会把第二句话插进当前轮。
-
-## 终端
-
-底部是一框输入。空闲时上沿是 `╭─ jotaro`，运行中变成 `╭─ steer`，下沿写着模型和快捷键。正在生成的文字、当前工具，以及子代理的动作，显示在框的上方。运行结束马上切回 jotaro。运行中再输入的文字会插进当前轮。
-
-粘贴超过 5 行或 800 字时，输入框只显示 `[Pasted text #1 +N lines]`，回车后模型收到的仍是全文。图片用 Ctrl+V，输入框显示 `[Image #1]`。退格会整段删掉这一行摘要。
-
-子代理按嵌套块展开：`● explore`，下面缩进它正在读的文件和搜到的内容，结束时收成 `⎿ 完成`。终端里不再把整段子代理结果一次性甩出来。
-
-```mermaid
-flowchart TD
-  line[回车] --> kind{这行是什么}
-  kind -->|/ 开头| cmd[命令，不发给模型]
-  kind -->|正在等问卷| vote["y 允许，a 全允许，n 拒绝"]
-  kind -->|普通文字| prompt[后台线程 prompt]
-  prompt --> running{已经在跑}
-  running -->|否| loop[开始一轮]
-  running -->|是| steer[插进 steering]
-```
-
-普通文字用上下键翻已发送的内容。输入 `/` 后，上下键在候选里移动，回车选定；`/model` 选定后先补上空格，再选模型名。Tab 按前缀列出命令。灰色提示用右方向键或 Ctrl+E 接受。Ctrl+C 中断当前运行，Ctrl+D 退出。
-
-`bash`、`powershell`、`write`、`edit` 执行前会问一句。`y` 允许这次，`a` 本次会话全部允许，`n` 拒绝，其他文字当作提示交回模型、不执行。`read`、`ls`、`grep`、`find` 直接执行。
-
-命令：`/help`、`/abort`、`/reset`、`/model`、`/model 名称`、`/exit`、`/quit`。
-
-## 工具
-
-实现 `ToolContributor` 并标成 `@Component`，方法上用 `@Tool` 声明参数。Spring 会把这些 Bean 注入工厂，新工具不用改装配代码。
-
-| 名称 | 作用 |
+| 工具 | 用途 |
 | --- | --- |
-| `read` | 读文件。默认最多 2000 行或 50KB，可用 `offset`、`limit` 续读 |
-| `write` | 创建或整文件覆盖。终端里执行前要确认 |
-| `edit` | 精确替换。`oldText` 必须和原文一致、唯一，且多段互不重叠。终端里执行前要确认 |
-| `bash` | 在当前工作目录执行命令，默认超时 120 秒。终端里执行前要确认 |
-| `powershell` | 执行 PowerShell，优先 `pwsh`。终端里执行前要确认 |
-| `ls` | 列目录，默认最多 500 条 |
-| `grep` | 搜文件内容，默认最多 100 条 |
-| `find` | 按 glob 找文件，默认最多 1000 条 |
-| `currentTime` | 当前本地时间 |
-| `terminate` | 结束这一轮循环 |
-| `subagent` | 把独立任务交给子代理。单个用 `agent` + `task`；`tasks` 并行，最多 8 个；`chain` 按顺序执行，下一步可用 `{previous}` |
-| `rag` | 检索知识库。`query` 必填，`knowledgeBase` 可空。服务是本仓库的 `rag` 模块，库是 PostgreSQL 的 `jotaro_rag` |
+| `read`、`ls`、`grep`、`find` | 读取、列目录、搜索内容、按 glob 找文件。后三项支持 `.gitignore` |
+| `write`、`edit` | 整文件写入或精确替换。同一文件的变更串行，替换目标需唯一且互不重叠 |
+| `bash`、`powershell` | 在工作目录执行命令。默认超时 120 秒，PowerShell 优先使用 `pwsh` |
+| `currentTime`、`terminate` | 读取本地时间、结束工具驱动的继续调用 |
+| `subagent`、`rag` | 委派任务、从独立知识库服务检索片段 |
 
-相对路径相对启动时的工作目录。`~` 会展开。`ls`、`grep`、`find` 遵守 `.gitignore`。`write` 和 `edit` 对同一文件串行。
+`read` 默认最多返回 2,000 行或 50 KB，可用 `offset` 和 `limit` 续读。新增工具时，实现 [ToolContributor](agent/src/main/java/org/jotaro/jotarocode/agent/tools/ToolContributor.java)，注册为 Spring 组件，在方法上声明 `@Tool`。新增检索通路则实现 [Retriever](rag/src/main/java/org/jotaro/rag/retrieval/Retriever.java) 并注册组件。
 
-知识库不在 Agent 进程里。PostgreSQL 的 `jotaro_rag` 由本仓库的 `rag` 模块管理，`rag` 工具只访问它的 HTTP 接口。一次查询会走所有打开的通路，再用倒数排名合并。现在接通的是 `postgres`。把 `rag.elasticsearch.enabled` 或 `rag.graph.enabled` 设为 `true` 后，Elasticsearch 和 GraphQL 会加入同一次检索。新通路实现 `Retriever` 并标成组件即可。
+### 子代理和技能
 
-`subagent` 每次调用都会新开一个会话，子代理看不到父对话。内置 `explore` 只有 `read`、`grep`、`find`、`ls`；`general` 使用除 `subagent` 以外的工具。同名 markdown 可以覆盖它们，目录是 `~/.pi/agent/agents/*.md`，以及从工作目录向上找到的最近 `.pi/agents/`。子代理步数上限是 8，模型默认跟随父会话，文件里的 `model` 可以单独指定。父代理在一次回复里发出的多个 `subagent` 调用本身也会并行。
+`subagent` 支持三种输入方式：
 
-## 技能
+| 参数 | 执行方式 |
+| --- | --- |
+| `agent` + `task` | 运行一个子代理 |
+| `tasks` | 并行处理独立任务，最多 8 项，单批最多 4 项同时运行 |
+| `chain` | 顺序执行，后续任务可用 `{previous}` 引用上一步结果 |
 
-`SKILL.md` 可以放在这些目录：
+内置 `explore` 仅有 `read`、`grep`、`find`、`ls`。内置 `general` 可以使用除 `subagent` 以外的工具。子代理有独立上下文，默认继承父会话的模型，最多运行 8 个模型轮次。可在 `~/.pi/agent/agents/` 或工作目录向上找到的最近 `.pi/agents/` 下用 Markdown 定义子代理或覆盖同名内置定义。
 
-- 项目内 `.agents/skills/` 或 `.pi/skills/`，从工作目录向上直到含 `.git` 的仓库根
-- 用户目录 `~/.agents/skills/` 或 `~/.pi/agent/skills/`
+技能可放在用户目录 `~/.pi/agent/skills/`、`~/.agents/skills/`，或项目内从当前目录到仓库根的 `.pi/skills/`、`.agents/skills/` 下。例子：
 
 ```markdown
 ---
-name: pdf-tools
-description: 从 PDF 提取文字。阅读或转换 PDF 时使用。
+name: review-changes
+description: 按项目约定检查变更。用户要求审阅代码时使用。
 ---
 
-# PDF
-
-先读 references/formats.md。
+先读 references/review-guide.md，再检查改动涉及的调用链。
 ```
 
-系统提示里只有名称、描述和路径。模型认为匹配时用 `read` 打开文件。页面的技能下拉框，或输入 `/skill:pdf-tools 后面跟要求`，会把正文放进这条消息。`disable-model-invocation: true` 的技能只出现在下拉里。改技能后需要新开进程，已经创建的会话不会重新扫描。
+模型从系统提示里的技能目录按需读取正文。网页可从下拉框选择技能，也可把 `/skill:review-changes 检查本次改动` 放在消息开头。设置 `disable-model-invocation: true` 可让技能只通过显式命令使用。
 
-## HTTP
+## HTTP API
 
-成功和业务错误都是 HTTP 200。看 JSON 里的 `code`：`200` 成功，`500` 失败。
+### Agent
 
-| 方法 | 路径 | 作用 |
-| --- | --- | --- |
-| `POST` | `/api/sessions` | 创建会话。正文可带 `model`、`systemPrompt` |
-| `GET` | `/api/models` | 模型列表和默认模型 |
-| `GET` | `/api/skills` | 技能名称、描述、是否仅命令可用 |
-| `GET` | `/api/sessions/{id}/events` | SSE。事件名 `message`，正文是 JSON |
-| `POST` | `/api/sessions/{id}/messages` | `{ "content": "..." }`。先连上 SSE 再发 |
-| `POST` | `/api/sessions/{id}/queue` | `{ "content": "...", "kind": "STEER" }` 或 `FOLLOW_UP` |
-| `POST` | `/api/sessions/{id}/abort` | 取消当前运行 |
-| `POST` | `/api/sessions/{id}/reset` | 清空会话。运行中会拒绝 |
-| `POST` | `/api/sessions/{id}/model` | `{ "model": "glm-4.6" }`。运行中会拒绝 |
+业务响应使用 HTTP 200，读取 JSON 的 `code` 判断成功（`200`）或失败（`500`）。先建立 SSE 并等到 `init` 事件，再发消息。运行事件以名为 `message` 的 SSE 事件传输，同一会话只向最近登记的连接推送。
 
-内置模型名是 Bean 名：`deepseek-chat`、`glm-4.6`、`qwen4-max-preview`。`AGENT_END` 且 `stepLimitReached` 为真时，是助手消息到了步数上限。
+| 方法与路径 | 请求或响应 |
+| --- | --- |
+| `GET /api/models` | 模型列表与默认模型 |
+| `GET /api/skills` | 已发现技能及其调用方式 |
+| `POST /api/sessions` | 可传 `model`、`systemPrompt`，返回 `sessionId` |
+| `GET /api/sessions/{id}/events` | SSE 订阅 |
+| `POST /api/sessions/{id}/messages` | `{"content":"..."}` |
+| `POST /api/sessions/{id}/queue` | `{"content":"...","kind":"STEER"}`，也可用 `FOLLOW_UP` |
+| `POST /api/sessions/{id}/abort` | 中止当前运行 |
+| `POST /api/sessions/{id}/reset` | 清空会话历史，需处于空闲状态 |
+| `POST /api/sessions/{id}/model` | `{"model":"glm-4.6"}`，需处于空闲状态 |
 
-## 配置
+`MESSAGE_UPDATE.text` 是文本增量，`MESSAGE_END.text` 是完整消息。工具执行事件通过 `toolCallId` 配对。`AGENT_END.stepLimitReached` 表示达到步数上限。
 
-`piagent` 在 `application-local.yaml`，缺省值在 `PiAgentProperties`。
+### RAG
 
-| 项 | 默认 | 含义 |
-| --- | --- | --- |
-| `mode` | `server` | `server` 提供网页，`tui` 只开终端 |
-| `model` | `deepseek-chat` | 新会话的默认模型 |
-| `max-steps` | `20` | 一次运行最多多少条助手消息 |
-| `message-window` | `40` | 发给模型的最近消息数 |
-| `system-prompt` | 见文件 | 工具使用说明。技能目录接在它后面 |
-| `rag.base-url` | `http://127.0.0.1:8090` | `rag` 模块的地址。库表不在 Agent 进程里 |
+| 方法与路径 | 请求或响应 |
+| --- | --- |
+| `GET /api/routes` | 检索通路与启用状态 |
+| `GET /api/bases` / `POST /api/bases` | 列库 / 按 `name` 和可选 `description` 建库 |
+| `GET /api/bases/{name}/documents` / `POST /api/bases/{name}/documents` | 列文档 / 写入 `title`、`content` 和可选 `source` |
+| `DELETE /api/documents/{id}` | 删除文档及所属分段 |
+| `POST /api/search` | 传 `query`、可选 `knowledgeBase` 和 `limit`，返回 `hits` |
 
-## 测试
+检索默认返回 5 条，`limit` 范围为 1 到 20。省略 `knowledgeBase` 时跨库查询。输入校验错误返回 HTTP 400 和 `error` 字段。
+
+## 开发与测试
+
+| 想了解什么 | 从哪里读 |
+| --- | --- |
+| 模型调用、工具调度、事件顺序 | [agent/runtime](agent/src/main/java/org/jotaro/jotarocode/agent/runtime) |
+| 文件和命令工具 | [agent/tools/coding](agent/src/main/java/org/jotaro/jotarocode/agent/tools/coding) |
+| SSE 与会话管理 | [service/impl](agent/src/main/java/org/jotaro/jotarocode/service/impl) |
+| 终端交互与格式化 | [tui](agent/src/main/java/org/jotaro/jotarocode/tui) |
+| 文档切分、索引和查询 | [rag/index](rag/src/main/java/org/jotaro/rag/index)、[rag/retrieval](rag/src/main/java/org/jotaro/rag/retrieval) |
+| 两个管理入口的页面逻辑 | [Agent 网页](agent/src/main/resources/static/index.html)、[知识库网页](rag/src/main/resources/static/index.html) |
 
 ```bash
-mvn test
+mvn test                                                 # 两个模块，含数据库集成测试
+mvn -pl agent test                                       # Agent 测试，无需真实模型
+mvn -pl rag -Dtest=ChunkerTest,RrfTest,RetrieverParseTest test  # RAG 纯单元测试
 ```
 
-只测一个应用时用 `mvn -pl agent test` 或 `mvn -pl rag test`。`rag` 的检索测试会连本机 PostgreSQL 的 `jotaro_rag`。
+`KnowledgeSearchTest` 使用配置指向的 PostgreSQL 验证入库和检索，会创建并清理一个临时知识库。
 
-循环、工具、技能发现和终端输出都不访问真实模型。
+常用 Agent 设置定义在 [PiAgentProperties](agent/src/main/java/org/jotaro/jotarocode/config/PiAgentProperties.java) 中。RAG 设置见 [application.yaml](rag/src/main/resources/application.yaml)。
+
+| 配置 | 默认值 | 含义 |
+| --- | --- | --- |
+| `piagent.model` | `deepseek-chat` | 新会话默认模型 |
+| `piagent.max-steps` | `20` | 运行中允许的助手消息数量 |
+| `piagent.message-window` | `40` | 发给模型的最近消息窗口 |
+| `piagent.system-prompt` | 见属性类 | 工具使用说明，创建 Agent 时拼入技能目录 |
+| `piagent.rag.base-url` | `http://127.0.0.1:8090` | 知识库服务地址 |
+| `rag.rrf-k` | `60` | 倒数排名融合常数 |

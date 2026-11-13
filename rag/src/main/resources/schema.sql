@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS document (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- 分段保留知识库 ID 便于过滤，删除文档时由外键清理对应分段。
 CREATE TABLE IF NOT EXISTS chunk (
     id uuid PRIMARY KEY,
     base_id uuid NOT NULL REFERENCES knowledge_base (id) ON DELETE CASCADE,
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS chunk (
 );
 
 CREATE INDEX IF NOT EXISTS chunk_base_idx ON chunk (base_id);
+-- 全文和三元组使用 GIN，向量使用基于余弦距离的 HNSW。
 CREATE INDEX IF NOT EXISTS chunk_search_idx ON chunk USING gin (search_vector);
 CREATE INDEX IF NOT EXISTS chunk_trgm_idx ON chunk USING gin (content gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS chunk_embedding_idx ON chunk USING hnsw (embedding vector_cosine_ops);

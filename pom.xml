@@ -42,4 +42,20 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <build>
+        <plugins>
+            <!--
+              在仓库根执行 mvn spring-boot:run 时，这个聚合工程没有主类。
+              跳过它，让后面的 agent 模块真正启动。不把这段配置传给子模块。
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

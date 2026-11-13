@@ -10,6 +10,10 @@
     <artifactId>jotaro-rag</artifactId>
     <name>jotaro-rag</name>
     <description>Knowledge base admin and pluggable retrieval for Jotaro</description>
+    <properties>
+        <!-- 根目录的 spring-boot:run 只启动 agent。单独启动本模块时加上 -Dspring-boot.run.skip=false。 -->
+        <spring-boot.run.skip>true</spring-boot.run.skip>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

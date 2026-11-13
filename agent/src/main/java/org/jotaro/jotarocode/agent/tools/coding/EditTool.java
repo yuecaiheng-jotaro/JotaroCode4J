@@ -83,6 +83,7 @@ public class EditTool implements ToolContributor {
             }
             spans.add(new Span(content.indexOf(oldText), oldText.length(), newText, index));
         }
+        // 所有定位都基于同一份原文，排序后检查相邻区间是否重叠。
         spans.sort(Comparator.comparingInt(Span::start));
         for (int index = 1; index < spans.size(); index++) {
             Span previous = spans.get(index - 1);
@@ -92,6 +93,7 @@ public class EditTool implements ToolContributor {
                         + "] overlap in " + path + ". Merge them into one edit or target disjoint regions.");
             }
         }
+        // 从文件末尾向前替换，已计算的前方偏移量不会被长度变化影响。
         StringBuilder builder = new StringBuilder(content);
         for (int index = spans.size() - 1; index >= 0; index--) {
             Span span = spans.get(index);

@@ -100,6 +100,7 @@ async function loadBases() {
   }
 }
 
+// 切换知识库时清空上次命中，后续入库和检索都使用当前库名。
 async function select(name) {
   state.base = name;
   document.getElementById("current").textContent = name;
@@ -173,6 +174,7 @@ document.getElementById("search-form").onsubmit = async (event) => {
     for (const hit of result.hits) {
       const block = document.createElement("article");
       block.className = "hit";
+      // 检索内容来自入库文档，按纯文本渲染。
       const meta = document.createElement("div");
       meta.className = "meta";
       meta.textContent = hit.route + " · " + Number(hit.score).toFixed(4) + (hit.source ? " · " + hit.source : "");

@@ -74,6 +74,7 @@ final class ShellRunner {
     private static Process start(List<String> argv, Path cwd, Path temp) {
         ProcessBuilder builder = new ProcessBuilder(argv);
         builder.directory(cwd.toFile());
+        // 合并输出并重定向到文件，避免等待退出时子进程因管道写满而卡住。
         builder.redirectErrorStream(true);
         builder.redirectOutput(temp.toFile());
         try {

@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
+/** 维护知识库和文档，并在入库时生成检索所需的分段。 */
 @Service
 public class KnowledgeService {
 
@@ -70,6 +71,7 @@ public class KnowledgeService {
                 """, new MapSqlParameterSource("name", normalizeName(base)), (rs, row) -> document(rs));
     }
 
+    // 文档和分段在同一事务写入，分段或向量写入失败时整篇回滚。
     @Transactional
     public DocumentView ingest(String base, String title, String content, String source) {
         String baseName = normalizeName(base);
@@ -123,6 +125,7 @@ public class KnowledgeService {
 
     public void deleteDocument(String documentId) {
         UUID id = parseId(documentId);
+        // 分段由数据库外键级联删除。
         int updated = template.update("DELETE FROM document WHERE id = ?", id);
         if (updated == 0) {
             throw new IllegalArgumentException("文档不存在");

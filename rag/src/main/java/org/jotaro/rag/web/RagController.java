@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/** 提供知识库管理与检索 API，供管理页面和 Agent 的 HTTP 客户端使用。 */
 @RestController
 public class RagController {
 
@@ -57,6 +58,7 @@ public class RagController {
         if (request.query() == null || request.query().isBlank()) {
             throw new IllegalArgumentException("查询不能为空");
         }
+        // 统一在 HTTP 边界限制返回数量，并用空字符串表示跨知识库查询。
         int limit = request.limit() == null ? 5 : Math.max(1, Math.min(request.limit(), 20));
         String base = request.knowledgeBase() == null ? "" : request.knowledgeBase().trim();
         List<RetrievalHit> hits = search.search(new RetrievalQuery(request.query().trim(), base, limit));

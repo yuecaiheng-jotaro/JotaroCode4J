@@ -58,6 +58,7 @@ public final class RunControl {
     }
 
     public void bind(Subscription next) {
+        // 取消可能发生在流订阅登记前，登记后再检查一次取消状态。
         subscription.set(next);
         if (aborted.get() && next != null) {
             next.cancel();

@@ -19,6 +19,7 @@ public final class Rrf {
         for (List<RetrievalHit> ranking : rankings) {
             for (int rank = 0; rank < ranking.size(); rank++) {
                 RetrievalHit hit = ranking.get(rank);
+                // 同一通路里的同一片段可以累加贡献，不同通路的本地 ID 互相独立。
                 String key = hit.route() + ":" + hit.id();
                 scores.merge(key, 1.0 / (constant + rank + 1), Double::sum);
                 chosen.putIfAbsent(key, hit);
