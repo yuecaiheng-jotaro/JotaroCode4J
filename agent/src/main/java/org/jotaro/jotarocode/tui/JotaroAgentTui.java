@@ -1,6 +1,6 @@
 package org.jotaro.jotarocode.tui;
 
-import org.jotaro.jotarocode.agent.PiAgent;
+import org.jotaro.jotarocode.agent.JotaroAgent;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
@@ -29,23 +29,23 @@ import java.util.concurrent.TimeUnit;
  * 执行 bash、powershell、write、edit 之前会发问卷：y 允许这次，a 全部允许，n 拒绝，其他文字当作提示。
  * 输入 {@code /} 后按前缀给出灰色提示。Tab 列出匹配的命令，每条一行；{@code /model} 后再补全模型名。
  */
-public final class PiAgentTui {
+public final class JotaroAgentTui {
 
     private static final String[] SPIN = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
 
-    private final PiAgent agent;
+    private final JotaroAgent agent;
     private final ChatClientRegistry registry;
     private volatile String model;
     private final AgentEventFormatter formatter = new AgentEventFormatter();
     private final SubagentPane subagents = new SubagentPane();
     // 模型循环运行在后台，读行线程仍能处理确认、追加指令和中断。
     private final java.util.concurrent.ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "pi-agent-tui");
+        Thread thread = new Thread(runnable, "jotaro-tui");
         thread.setDaemon(true);
         return thread;
     });
     private final ScheduledExecutorService spinner = Executors.newSingleThreadScheduledExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "pi-agent-spin");
+        Thread thread = new Thread(runnable, "jotaro-spin");
         thread.setDaemon(true);
         return thread;
     });
@@ -58,7 +58,7 @@ public final class PiAgentTui {
     private QuestionGate questions;
     private SingleColumnLineReader reader;
 
-    public PiAgentTui(PiAgent agent, ChatClientRegistry registry, String model) {
+    public JotaroAgentTui(JotaroAgent agent, ChatClientRegistry registry, String model) {
         this.agent = agent;
         this.registry = registry;
         this.model = model;

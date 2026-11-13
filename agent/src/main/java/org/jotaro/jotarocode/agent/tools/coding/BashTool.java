@@ -27,6 +27,6 @@ public class BashTool implements ToolContributor {
         }
         Path bash = Path.of("/bin/bash");
         String executable = Files.isExecutable(bash) ? bash.toString() : "bash";
-        return ShellRunner.run(List.of(executable, "-c", command), ToolPaths.cwd(), timeout, "pi-bash");
+        return ShellRunner.run(List.of(executable, "-c", command), ToolPaths.cwd(), timeout, "jotaro-bash");
     }
 }

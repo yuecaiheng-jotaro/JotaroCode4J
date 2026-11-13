@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.jotaro.jotarocode</groupId>
-        <artifactId>pi-agent</artifactId>
+        <artifactId>jotaro</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>jotaro-agent</artifactId>
     <name>jotaro-agent</name>
-    <description>Spring AI implementation of the pi agent runtime</description>
+    <description>Spring AI implementation of the Jotaro runtime</description>
     <!--
       Java 17，Spring Boot 3.5.8，Spring AI 1.1.0。
       spring-ai-bom 在父工程里统一 DeepSeek、智谱、OpenAI（Qwen/DashScope 兼容）starter 的版本。

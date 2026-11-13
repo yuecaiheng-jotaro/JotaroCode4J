@@ -44,7 +44,7 @@ final class SingleColumnLineReader extends LineReaderImpl {
     private final PasteChunks pastes = new PasteChunks();
 
     SingleColumnLineReader(Terminal terminal) {
-        super(terminal, "pi-agent", new HashMap<>());
+        super(terminal, "jotaro", new HashMap<>());
     }
 
     /**

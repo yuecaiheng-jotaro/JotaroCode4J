@@ -9,10 +9,10 @@
         <relativePath/>
     </parent>
     <groupId>org.jotaro.jotarocode</groupId>
-    <artifactId>pi-agent</artifactId>
+    <artifactId>jotaro</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>pi-agent</name>
+    <name>jotaro</name>
     <description>Jotaro agent and knowledge base, one repository, two applications</description>
     <!--
       一个仓库两个可执行应用：agent 是编程助手，rag 是知识库管理端。

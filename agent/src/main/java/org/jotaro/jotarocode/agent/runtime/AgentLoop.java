@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Spring AI 上的 agent 循环，语义对齐 pi-agent-core：
+ * Spring AI 上的 agent 循环，语义如下：
  * 每一轮是一次模型响应加上它发起的工具调用；工具可以顺序或并行执行；
  * steering 在当前轮结束后插入，follow-up 在循环即将停止时插入。
  */

@@ -4,12 +4,12 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * {@code application.yaml} 里 {@code piagent.*} 的绑定。
+ * {@code application.yaml} 里 {@code jotaro.*} 的绑定。
  * {@code mode} 决定是网页服务还是终端；{@code maxSteps} 是助手消息条数上限，不是工具调用次数。
  */
 @Data
-@ConfigurationProperties(prefix = "piagent")
-public class PiAgentProperties {
+@ConfigurationProperties(prefix = "jotaro")
+public class JotaroAgentProperties {
     private String mode = "server";
     private String model = "deepseek-chat";
     private int maxSteps = 20;

@@ -40,7 +40,7 @@ public class PowerShellTool implements ToolContributor {
                 List.of(executable, "-NoProfile", "-Command", script),
                 ToolPaths.cwd(),
                 timeout,
-                "pi-powershell"
+                "jotaro-powershell"
         );
     }
 

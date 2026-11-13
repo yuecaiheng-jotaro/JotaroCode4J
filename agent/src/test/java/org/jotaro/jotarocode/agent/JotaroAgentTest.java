@@ -20,11 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 用假的模型流检查：空闲 prompt、运行中 steering、follow-up、中止和重置。 */
-class PiAgentTest {
+class JotaroAgentTest {
 
     @Test
     void promptKeepsTheUserMessageAndTheAssistantReply() {
-        PiAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) -> {
+        JotaroAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) -> {
             onTextDelta.accept("你好");
             return AssistantTurn.of(new AssistantMessage("你好"), StopReason.STOP);
         });
@@ -42,7 +42,7 @@ class PiAgentTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         AtomicInteger calls = new AtomicInteger();
-        PiAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) -> {
+        JotaroAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) -> {
             int call = calls.incrementAndGet();
             if (call == 1) {
                 started.countDown();
@@ -73,7 +73,7 @@ class PiAgentTest {
     @Test
     void promptKeepsAPastedImageOnTheUserMessage() {
         Media image = new Media(Media.Format.IMAGE_PNG, new ByteArrayResource(new byte[]{1, 2, 3}));
-        PiAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) ->
+        JotaroAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) ->
                 AssistantTurn.of(new AssistantMessage("看到了"), StopReason.STOP));
 
         agent.prompt("请看附图。", List.of(image));
@@ -84,8 +84,8 @@ class PiAgentTest {
         assertEquals(Media.Format.IMAGE_PNG, user.getMedia().get(0).getMimeType());
     }
 
-    private static PiAgent agent(org.jotaro.jotarocode.agent.runtime.AssistantStreamer streamer) {
-        return new PiAgent(
+    private static JotaroAgent agent(org.jotaro.jotarocode.agent.runtime.AssistantStreamer streamer) {
+        return new JotaroAgent(
                 "system",
                 List.<AgentTool>of(),
                 streamer,

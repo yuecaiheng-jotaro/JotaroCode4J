@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
-import org.jotaro.jotarocode.config.PiAgentProperties;
+import org.jotaro.jotarocode.config.JotaroAgentProperties;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class RagClient {
 
     @Resource
-    private PiAgentProperties properties;
+    private JotaroAgentProperties properties;
     @Resource
     private ObjectMapper objectMapper;
 

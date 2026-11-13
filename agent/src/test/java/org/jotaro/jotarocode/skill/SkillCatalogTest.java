@@ -79,7 +79,7 @@ class SkillCatalogTest {
         List<Path> locations = SkillCatalog.locations(nested);
 
         assertTrue(locations.contains(nested.resolve(".agents/skills")));
-        assertTrue(locations.contains(repo.resolve(".pi/skills")));
+        assertTrue(locations.contains(repo.resolve(".jotaro/skills")));
         assertFalse(locations.contains(temp.resolve(".agents/skills")));
     }
 }

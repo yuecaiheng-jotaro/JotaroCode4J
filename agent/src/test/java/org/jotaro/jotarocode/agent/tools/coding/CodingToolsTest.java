@@ -121,7 +121,7 @@ class CodingToolsTest {
     void bashReturnsOutputAndFailure() {
         assumeTrue(Files.isExecutable(Path.of("/bin/bash")));
         BashTool bash = new BashTool();
-        assertTrue(bash.bash("printf 'hello-pi'", 10).contains("hello-pi"));
+        assertTrue(bash.bash("printf 'hello-jotaro'", 10).contains("hello-jotaro"));
         IllegalStateException failure = assertThrows(IllegalStateException.class, () -> bash.bash("exit 3", 10));
         assertTrue(failure.getMessage().contains("Command exited with code 3"));
     }

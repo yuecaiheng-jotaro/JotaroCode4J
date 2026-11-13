@@ -18,8 +18,8 @@ import java.util.Optional;
 /**
  * 发现 Agent Skills：只把名称、描述和路径放进系统提示，正文在任务匹配或 {@code /skill:name} 时再读取。
  *
- * <p>扫描顺序：先用户目录的 {@code ~/.pi/agent/skills}、{@code ~/.agents/skills}，
- * 再从工作目录向上直到含 {@code .git} 的仓库根，每一层看 {@code .pi/skills} 和 {@code .agents/skills}。
+ * <p>扫描顺序：先用户目录的 {@code ~/.jotaro/skills}、{@code ~/.agents/skills}，
+ * 再从工作目录向上直到含 {@code .git} 的仓库根，每一层看 {@code .jotaro/skills} 和 {@code .agents/skills}。
  * 同名技能保留先扫到的那个。
  */
 @Component
@@ -85,12 +85,12 @@ public class SkillCatalog {
     static List<Path> locations(Path cwd) {
         Path home = Path.of(System.getProperty("user.home"));
         List<Path> roots = new ArrayList<>();
-        roots.add(home.resolve(".pi/agent/skills"));
+        roots.add(home.resolve(".jotaro/skills"));
         roots.add(home.resolve(".agents/skills"));
         Path cursor = cwd.toAbsolutePath().normalize();
         Path stop = repositoryRoot(cursor);
         while (true) {
-            roots.add(cursor.resolve(".pi/skills"));
+            roots.add(cursor.resolve(".jotaro/skills"));
             roots.add(cursor.resolve(".agents/skills"));
             if (cursor.equals(stop) || cursor.getParent() == null) {
                 break;

@@ -6,7 +6,7 @@ import org.jotaro.jotarocode.agent.runtime.SubagentScope;
 import org.jotaro.jotarocode.agent.subagent.SubagentCatalog;
 import org.jotaro.jotarocode.agent.subagent.SubagentRunner;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
-import org.jotaro.jotarocode.config.PiAgentProperties;
+import org.jotaro.jotarocode.config.JotaroAgentProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
@@ -27,7 +27,7 @@ public class SubagentTool implements ToolContributor {
     @Resource
     private ChatClientRegistry registry;
     @Resource
-    private PiAgentProperties properties;
+    private JotaroAgentProperties properties;
     @Resource
     private SubagentCatalog catalog;
 

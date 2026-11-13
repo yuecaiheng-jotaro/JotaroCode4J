@@ -33,7 +33,7 @@ import java.util.function.Function;
  * 循环拿到的是消息快照；{@code MESSAGE_END} 再把新消息追加回这里，所以循环内部的修改不会直接改这份列表。
  */
 @Slf4j
-public class PiAgent {
+public class JotaroAgent {
 
     /**
      * 系统提示词
@@ -102,7 +102,7 @@ public class PiAgent {
     private volatile Function<AgentLoopRequest.BeforeToolCallContext, BeforeToolCallResult> beforeToolCall;
     private volatile Consumer<SubagentActivity> subagentActivity;
 
-    public PiAgent(String systemPrompt,
+    public JotaroAgent(String systemPrompt,
                    List<AgentTool> tools,
                    AssistantStreamer streamer,
                    int maxSteps,
@@ -111,7 +111,7 @@ public class PiAgent {
         this(systemPrompt, tools, streamer, maxSteps, messageWindow, toolExecution, null);
     }
 
-    public PiAgent(String systemPrompt,
+    public JotaroAgent(String systemPrompt,
                    List<AgentTool> tools,
                    AssistantStreamer streamer,
                    int maxSteps,

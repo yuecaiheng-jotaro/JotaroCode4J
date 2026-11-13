@@ -1,7 +1,7 @@
 package org.jotaro.jotarocode.agent.subagent;
 
 import org.jotaro.jotarocode.agent.AgentState;
-import org.jotaro.jotarocode.agent.PiAgent;
+import org.jotaro.jotarocode.agent.JotaroAgent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.AssistantStreamer;
@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * 跑一个或多个子代理。每个子代理是新的 {@link PiAgent}，只有自己的消息，看不到父对话。
+ * 跑一个或多个子代理。每个子代理是新的 {@link JotaroAgent}，只有自己的消息，看不到父对话。
  * 工具名单里去掉 {@code subagent}，所以子代理不能再往下派。
  *
  * <p>三种用法和常见编码代理一致：单个任务、一批并行任务、按顺序传递上一步结果的链。
@@ -107,7 +107,7 @@ public final class SubagentRunner {
         RunControl parent = RunControl.current();
         int threads = Math.min(MAX_CONCURRENCY, tasks.size());
         ExecutorService pool = Executors.newFixedThreadPool(threads, runnable -> {
-            Thread thread = new Thread(runnable, "pi-subagent");
+            Thread thread = new Thread(runnable, "jotaro-subagent");
             thread.setDaemon(true);
             return thread;
         });
@@ -158,7 +158,8 @@ public final class SubagentRunner {
         }
         AssistantStreamer streamer = environment.streamers().apply(model);
         RunControl parent = RunControl.current();
-        PiAgent child = new PiAgent(
+        // 为子任务创建独立历史，沿用父运行的取消控制和工具审批。
+        JotaroAgent child = new JotaroAgent(
                 prompt(definition),
                 select(environment.tools(), definition.tools()),
                 streamer,

@@ -31,7 +31,7 @@ class SubagentCatalogTest {
 
     @Test
     void projectFileOverridesBuiltinAndAddsAgents() throws IOException {
-        Path agentsDir = temp.resolve(".pi/agents");
+        Path agentsDir = temp.resolve(".jotaro/agents");
         Files.createDirectories(agentsDir);
         Files.writeString(agentsDir.resolve("explore.md"), """
                 ---
@@ -72,10 +72,10 @@ class SubagentCatalogTest {
 
     @Test
     void nearestProjectDirectoryStopsAtTheRepositoryRoot() throws IOException {
-        Files.createDirectories(temp.resolve("outside/.pi/agents"));
+        Files.createDirectories(temp.resolve("outside/.jotaro/agents"));
         Path root = temp.resolve("repo");
         Files.createDirectories(root.resolve(".git"));
-        Path projectAgents = root.resolve(".pi/agents");
+        Path projectAgents = root.resolve(".jotaro/agents");
         Files.createDirectories(projectAgents);
         Path nested = root.resolve("nested");
         Files.createDirectories(nested);

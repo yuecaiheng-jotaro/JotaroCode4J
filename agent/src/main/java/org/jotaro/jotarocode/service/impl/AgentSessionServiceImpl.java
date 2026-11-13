@@ -1,7 +1,7 @@
 package org.jotaro.jotarocode.service.impl;
 
-import org.jotaro.jotarocode.agent.PiAgent;
-import org.jotaro.jotarocode.agent.PiAgentFactory;
+import org.jotaro.jotarocode.agent.JotaroAgent;
+import org.jotaro.jotarocode.agent.JotaroAgentFactory;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.event.PromptEvent;
@@ -35,21 +35,21 @@ import java.util.concurrent.ConcurrentMap;
 public class AgentSessionServiceImpl implements AgentSessionService {
 
     @Resource
-    private PiAgentFactory piAgentFactory;
+    private JotaroAgentFactory jotaroAgentFactory;
     @Resource
     private SseService sseService;
     @Resource
     private ApplicationEventPublisher eventPublisher;
     @Resource
     private SkillCatalog skillCatalog;
-    private final ConcurrentMap<String, PiAgent> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, JotaroAgent> sessions = new ConcurrentHashMap<>();
 
     @Override
     public CreateSessionResponse create(CreateSessionRequest request) {
         CreateSessionRequest safeRequest = request == null ? new CreateSessionRequest() : request;
-        String model = StringUtils.hasText(safeRequest.getModel()) ? safeRequest.getModel() : piAgentFactory.defaultModel();
+        String model = StringUtils.hasText(safeRequest.getModel()) ? safeRequest.getModel() : jotaroAgentFactory.defaultModel();
         String sessionId = UUID.randomUUID().toString();
-        PiAgent agent = piAgentFactory.create(model, safeRequest.getSystemPrompt());
+        JotaroAgent agent = jotaroAgentFactory.create(model, safeRequest.getSystemPrompt());
         agent.subscribe(event -> sseService.send(sessionId, toView(event)));
         sessions.put(sessionId, agent);
         return CreateSessionResponse.builder().sessionId(sessionId).model(model).build();
@@ -75,7 +75,7 @@ public class AgentSessionServiceImpl implements AgentSessionService {
 
     @Override
     public void abort(String sessionId) {
-        PiAgent agent = require(sessionId);
+        JotaroAgent agent = require(sessionId);
         if (!agent.isRunning()) {
             throw new BizException("当前会话没有正在运行的 Agent");
         }
@@ -93,22 +93,22 @@ public class AgentSessionServiceImpl implements AgentSessionService {
 
     @Override
     public void switchModel(String sessionId, String model) {
-        piAgentFactory.switchModel(require(sessionId), model);
+        jotaroAgentFactory.switchModel(require(sessionId), model);
     }
 
     @Override
     public java.util.List<String> models() {
-        return piAgentFactory.modelNames();
+        return jotaroAgentFactory.modelNames();
     }
 
     @Override
     public String defaultModel() {
-        return piAgentFactory.defaultModel();
+        return jotaroAgentFactory.defaultModel();
     }
 
     @Override
     public void run(PromptEvent event) {
-        PiAgent agent = require(event.getSessionId());
+        JotaroAgent agent = require(event.getSessionId());
         if (event.isFollowUp()) {
             agent.followUp(event.getContent());
         } else {
@@ -124,8 +124,8 @@ public class AgentSessionServiceImpl implements AgentSessionService {
         }
     }
 
-    private PiAgent require(String sessionId) {
-        PiAgent agent = sessions.get(sessionId);
+    private JotaroAgent require(String sessionId) {
+        JotaroAgent agent = sessions.get(sessionId);
         if (agent == null) {
             throw new BizException("会话不存在: " + sessionId);
         }

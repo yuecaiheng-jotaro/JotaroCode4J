@@ -21,7 +21,7 @@ public class AsyncConfig {
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(10);
         executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("pi-agent-");
+        executor.setThreadNamePrefix("jotaro-");
         executor.initialize();
         return executor;
     }

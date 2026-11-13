@@ -7,7 +7,7 @@ import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
 import org.jotaro.jotarocode.agent.tools.SubagentTool;
 import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
-import org.jotaro.jotarocode.config.PiAgentProperties;
+import org.jotaro.jotarocode.config.JotaroAgentProperties;
 import org.jotaro.jotarocode.exception.BizException;
 import org.jotaro.jotarocode.skill.SkillCatalog;
 import jakarta.annotation.PostConstruct;
@@ -22,18 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 按一次会话的需要组装 {@link PiAgent}：选模型、拼系统提示、把 {@code ToolContributor} 适配成循环认识的 {@code AgentTool}。
+ * 按一次会话的需要组装 {@link JotaroAgent}：选模型、拼系统提示、把 {@code ToolContributor} 适配成循环认识的 {@code AgentTool}。
  * 技能目录只在创建时读一次，之后换模型不会重新扫描技能。
  */
 @Component
-public class PiAgentFactory {
+public class JotaroAgentFactory {
 
     @Resource
     private ChatClientRegistry chatClientRegistry;
     @Resource
     private List<ToolContributor> contributors;
     @Resource
-    private PiAgentProperties properties;
+    private JotaroAgentProperties properties;
     @Resource
     private SkillCatalog skillCatalog;
 
@@ -52,7 +52,7 @@ public class PiAgentFactory {
         }
     }
 
-    public PiAgent create(String model, String systemPrompt) {
+    public JotaroAgent create(String model, String systemPrompt) {
         String resolvedModel = StringUtils.hasText(model) ? model : properties.getModel();
         String resolvedPrompt = StringUtils.hasText(systemPrompt) ? systemPrompt : properties.getSystemPrompt();
         String skills = skillCatalog.promptSection();
@@ -63,7 +63,7 @@ public class PiAgentFactory {
         if (chatClient == null) {
             throw new BizException("未找到模型: " + resolvedModel);
         }
-        PiAgent agent = new PiAgent(
+        JotaroAgent agent = new JotaroAgent(
                 resolvedPrompt,
                 tools,
                 new SpringAiAssistantStreamer(chatClient),
@@ -100,7 +100,7 @@ public class PiAgentFactory {
         return properties.getModel();
     }
 
-    public void switchModel(PiAgent agent, String model) {
+    public void switchModel(JotaroAgent agent, String model) {
         String resolvedModel = StringUtils.hasText(model) ? model : properties.getModel();
         ChatClient chatClient = chatClientRegistry.get(resolvedModel);
         if (chatClient == null) {

@@ -4,19 +4,19 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-/** 校验 --tui 会改成无 Web，并在参数末尾补上 --piagent.mode=tui。 */
+/** 校验 --tui 会改成无 Web，并在参数末尾补上 --jotaro.mode=tui。 */
 class JotaroAgentApplicationTest {
 
     @Test
     void tuiFlagOverridesConfiguredServerMode() {
         assertArrayEquals(
-                new String[]{"--tui", "--piagent.mode=tui"},
+                new String[]{"--tui", "--jotaro.mode=tui"},
                 JotaroAgentApplication.ensureTuiMode(new String[]{"--tui"}));
     }
 
     @Test
     void explicitTuiModeIsNotDuplicated() {
-        String[] args = {"--piagent.mode=tui"};
+        String[] args = {"--jotaro.mode=tui"};
         assertArrayEquals(args, JotaroAgentApplication.ensureTuiMode(args));
     }
 }

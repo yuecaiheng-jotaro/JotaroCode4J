@@ -17,7 +17,7 @@ import java.util.Optional;
 
 /**
  * 子代理名单。内置 {@code explore}（只读）和 {@code general}（可改文件、可执行命令）。
- * 同名文件会覆盖内置定义：先读 {@code ~/.pi/agent/agents}，再读从工作目录向上找到的最近 {@code .pi/agents}。
+ * 同名文件会覆盖内置定义：先读 {@code ~/.jotaro/agents}，再读从工作目录向上找到的最近 {@code .jotaro/agents}。
  */
 @Slf4j
 @Component
@@ -90,8 +90,8 @@ public class SubagentCatalog {
 
     static List<Path> locations(Path cwd) {
         List<Path> roots = new ArrayList<>();
-        roots.add(Path.of(System.getProperty("user.home")).resolve(".pi/agent/agents"));
-        Path project = nearest(cwd.toAbsolutePath().normalize(), ".pi/agents");
+        roots.add(Path.of(System.getProperty("user.home")).resolve(".jotaro/agents"));
+        Path project = nearest(cwd.toAbsolutePath().normalize(), ".jotaro/agents");
         if (project != null) {
             roots.add(project);
         }
