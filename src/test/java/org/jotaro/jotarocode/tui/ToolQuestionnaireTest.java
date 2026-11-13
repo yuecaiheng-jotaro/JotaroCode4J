@@ -35,5 +35,9 @@ class ToolQuestionnaireTest {
         List<String> lines = ToolQuestionnaire.prompt("bash", "{\"command\":\"rm -rf build\",\"timeout\":30}");
         assertEquals("╭ 允许执行 Bash", lines.get(0));
         assertEquals("│ rm -rf build", lines.get(1));
+        assertEquals("│ y 允许这次", lines.get(2));
+        assertEquals("│ a 全部允许", lines.get(3));
+        assertEquals("│ n 拒绝", lines.get(4));
+        assertEquals("╰ 其他文字当作提示", lines.get(5));
     }
 }

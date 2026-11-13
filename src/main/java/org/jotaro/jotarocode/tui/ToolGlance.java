@@ -52,6 +52,7 @@ final class ToolGlance {
             case "currentTime" -> "Time";
             case "terminate" -> "Done";
             case "subagent" -> "Agent";
+            case "rag" -> "Rag";
             default -> name;
         };
     }

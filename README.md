@@ -134,8 +134,11 @@ flowchart TD
 | `currentTime` | 当前本地时间 |
 | `terminate` | 结束这一轮循环 |
 | `subagent` | 把独立任务交给子代理。单个用 `agent` + `task`；`tasks` 并行，最多 8 个；`chain` 按顺序执行，下一步可用 `{previous}` |
+| `rag` | 检索知识库。`query` 必填，`knowledgeBase` 可空。服务是旁边的 jotaro-rag，库是 PostgreSQL 的 `jotaro_rag` |
 
 相对路径相对启动时的工作目录。`~` 会展开。`ls`、`grep`、`find` 遵守 `.gitignore`。`write` 和 `edit` 对同一文件串行。
+
+知识库不在这个进程里。PostgreSQL 的 `jotaro_rag` 由旁边的 jotaro-rag 管理，`rag` 工具只访问它的 HTTP 接口。
 
 `subagent` 每次调用都会新开一个会话，子代理看不到父对话。内置 `explore` 只有 `read`、`grep`、`find`、`ls`；`general` 使用除 `subagent` 以外的工具。同名 markdown 可以覆盖它们，目录是 `~/.pi/agent/agents/*.md`，以及从工作目录向上找到的最近 `.pi/agents/`。子代理步数上限是 8，模型默认跟随父会话，文件里的 `model` 可以单独指定。父代理在一次回复里发出的多个 `subagent` 调用本身也会并行。
 
@@ -188,6 +191,7 @@ description: 从 PDF 提取文字。阅读或转换 PDF 时使用。
 | `max-steps` | `20` | 一次运行最多多少条助手消息 |
 | `message-window` | `40` | 发给模型的最近消息数 |
 | `system-prompt` | 见文件 | 工具使用说明。技能目录接在它后面 |
+| `rag.base-url` | `http://127.0.0.1:8090` | jotaro-rag 的地址。库表不在本进程里 |
 
 ## 测试
 

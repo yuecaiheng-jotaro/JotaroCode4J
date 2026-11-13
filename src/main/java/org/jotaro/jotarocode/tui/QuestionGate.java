@@ -73,7 +73,7 @@ final class QuestionGate {
         }
         ToolQuestionnaire.Parsed parsed = ToolQuestionnaire.parse(line);
         if (parsed.kind() == ToolQuestionnaire.Parsed.Kind.AGAIN) {
-            printer.accept(List.of("请回答 y 允许这次，a 全部允许，n 拒绝，或直接输入提示"));
+            printer.accept(List.of("y 允许这次", "a 全部允许", "n 拒绝", "其他文字当作提示"));
             return true;
         }
         if (parsed.kind() == ToolQuestionnaire.Parsed.Kind.ALLOW_ALL) {

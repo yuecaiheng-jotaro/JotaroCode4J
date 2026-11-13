@@ -21,5 +21,13 @@ public class PiAgentProperties {
             需要当前时间时调用 currentTime。任务完成后调用 terminate。
             相对独立的搜索或实现交给 subagent。单个用 agent 和 task；互不依赖的一批用 tasks 并行；有先后的用 chain，下一步里写 {previous}。
             内置 explore 只读，general 可以改文件和执行命令。子代理看不到这段对话，也不能再派生子代理。
+            需要知识库里的资料时调用 rag，传 query，可选 knowledgeBase。
             """;
+    /** 知识库服务地址。库表在 jotaro-rag 项目里，库名 jotaro_rag。 */
+    private Rag rag = new Rag();
+
+    @Data
+    public static class Rag {
+        private String baseUrl = "http://127.0.0.1:8090";
+    }
 }

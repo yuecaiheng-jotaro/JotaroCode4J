@@ -30,7 +30,10 @@ final class ToolQuestionnaire {
         List<String> lines = new ArrayList<>();
         lines.add("╭ 允许执行 " + ToolGlance.label(toolName));
         lines.add("│ " + preview(toolName, arguments));
-        lines.add("╰ y 允许这次 · a 全部允许 · n 拒绝 · 其他文字当作提示");
+        lines.add("│ y 允许这次");
+        lines.add("│ a 全部允许");
+        lines.add("│ n 拒绝");
+        lines.add("╰ 其他文字当作提示");
         return lines;
     }
 
