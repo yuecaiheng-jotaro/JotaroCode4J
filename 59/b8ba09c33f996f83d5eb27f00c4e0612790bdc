@@ -1,0 +1,32 @@
+agent/src/main/java/org/jotaro/jotarocode/agent/runtime/AgentLoop.java
+  s_054079a5bb6038::t_d5c8da00b5e5ad 25,32,45,48-54,56-63,65-68,70-79,82-83,86-89,92-104,223
+agent/src/main/java/org/jotaro/jotarocode/agent/runtime/ToolBatchExecutor.java
+  s_054079a5bb6038::t_d5c8da00b5e5ad 1-75,77-80,82-95,97-108,110-119,126-261
+  s_054079a5bb6038::t_7c579526135118 76,81,96,109,120-125
+agent/src/main/resources/application.yaml
+  s_a06df77ee2692f::t_8a1f53dddca80b 16,37-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "59b8ba09c33f996f83d5eb27f00c4e0612790bdc",
+  "prompts": {},
+  "sessions": {
+    "s_054079a5bb6038": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1d477-cb89-7752-8c5d-c61cb097c0a9",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    },
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
