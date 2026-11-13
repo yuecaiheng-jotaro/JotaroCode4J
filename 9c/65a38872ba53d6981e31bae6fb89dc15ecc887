@@ -1,0 +1,19 @@
+agent/src/main/java/org/jotaro/jotarocode/tui/JotaroAgentTui.java
+  s_054079a5bb6038::t_137ce307d3e23b 130,132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "9c65a38872ba53d6981e31bae6fb89dc15ecc887",
+  "prompts": {},
+  "sessions": {
+    "s_054079a5bb6038": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1d477-cb89-7752-8c5d-c61cb097c0a9",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
