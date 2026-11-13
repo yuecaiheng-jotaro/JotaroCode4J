@@ -1,0 +1,39 @@
+src/main/java/org/jotaro/jotarocode/agent/tools/RagTool.java
+  s_a06df77ee2692f::t_567e0ed8f0675a 1-26
+src/main/java/org/jotaro/jotarocode/tui/ToolQuestionnaire.java
+  s_a06df77ee2692f::t_880f50b6e54958 33-36
+README.md
+  s_a06df77ee2692f::t_d59b1e8af422e8 137
+  s_a06df77ee2692f::t_51275dc64852e5 194
+  s_a06df77ee2692f::t_ba234c0552320a 141-142
+src/test/java/org/jotaro/jotarocode/tui/ToolQuestionnaireTest.java
+  s_a06df77ee2692f::t_58e2d63b7b8786 38-41
+src/main/java/org/jotaro/jotarocode/tui/ToolGlance.java
+  s_a06df77ee2692f::t_cec991ef12798e 55
+src/main/java/org/jotaro/jotarocode/agent/rag/RagClient.java
+  s_a06df77ee2692f::t_8bf51d665e20dc 1-104
+src/main/java/org/jotaro/jotarocode/config/PiAgentProperties.java
+  s_a06df77ee2692f::t_415ab7d67f54bf 24,26-32
+src/test/java/org/jotaro/jotarocode/agent/rag/RagClientTest.java
+  s_a06df77ee2692f::t_cdd9f49851ff7a 8
+  s_a06df77ee2692f::t_66121614161b5d 45-48
+  s_a06df77ee2692f::t_2fa4c72c1c37dc 1-7,9-44,49-52
+src/main/java/org/jotaro/jotarocode/tui/QuestionGate.java
+  s_a06df77ee2692f::t_2e3d1b63f22f27 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "86f83aa5d0d45421ba9121ff460532e6d5a44274",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
