@@ -1,0 +1,84 @@
+src/test/java/org/jotaro/jotarocode/tui/PromptStyleTest.java
+  s_a06df77ee2692f::t_aebdeb023cfeed 14-15,17,21-22,24-25,30,32-33,37-42
+src/main/java/org/jotaro/jotarocode/agent/runtime/SubagentActivity.java
+  s_a06df77ee2692f::t_8f019dc48860cf 1-23
+src/main/java/org/jotaro/jotarocode/agent/PiAgent.java
+  s_a06df77ee2692f::t_fc63f17a49ce25 12
+  s_a06df77ee2692f::t_a33a5bc7a841b2 102
+  s_a06df77ee2692f::t_9856228482ab67 234
+  s_a06df77ee2692f::t_8b91f6d0d06d2e 158-161
+README.md
+  s_a06df77ee2692f::t_cec30851e27b6d 99-100
+  s_a06df77ee2692f::t_63a911c5c2995e 101
+src/test/java/org/jotaro/jotarocode/tui/AgentEventFormatterTest.java
+  s_a06df77ee2692f::t_e9a72bbd859747 86-89
+  s_a06df77ee2692f::t_6c85fe59e64558 38
+  s_a06df77ee2692f::t_20df17918dcbd4 65
+  s_a06df77ee2692f::t_ce6ca711918401 27
+  s_a06df77ee2692f::t_1152afce7e496e 54,56
+src/main/java/org/jotaro/jotarocode/tui/ToolGlance.java
+  s_a06df77ee2692f::t_63357041c59e68 1-83
+src/main/java/org/jotaro/jotarocode/tui/SubagentPane.java
+  s_a06df77ee2692f::t_4d0ada45dce826 1-151
+src/main/java/org/jotaro/jotarocode/tui/PromptStyle.java
+  s_a06df77ee2692f::t_a1f1b9bedefa51 31-32
+  s_a06df77ee2692f::t_70a640a69c081d 15-28
+  s_a06df77ee2692f::t_d58e10fad8590b 4-5
+  s_a06df77ee2692f::t_8f6e77ab7729cf 43,45-47,49,54-70
+src/main/java/org/jotaro/jotarocode/tui/AgentEventFormatter.java
+  s_a06df77ee2692f::t_f7ad2b7738d266 108
+  s_a06df77ee2692f::t_ec9130107a86d0 129-131,133-135
+  s_a06df77ee2692f::t_df2422efb3e248 60-64,68-77,83-85
+  s_a06df77ee2692f::t_4a709272649016 23-24
+  s_a06df77ee2692f::t_0764d68f72e2b3 28-31,34
+  s_a06df77ee2692f::t_b5d3c1baed7b7e 141,146,151-159
+src/main/java/org/jotaro/jotarocode/tui/PiAgentTui.java
+  s_a06df77ee2692f::t_8751bcb4811e8d 74,76,81-82
+  s_a06df77ee2692f::t_92524d4ff2dc51 7
+  s_a06df77ee2692f::t_b3f59008ef9ac3 99-112
+  s_a06df77ee2692f::t_127744444d9775 39-40,45-49,52
+  s_a06df77ee2692f::t_a02cbb765ce8d3 155-156,166-171,177-189,195-202
+  s_a06df77ee2692f::t_5c5f9a7bfb3355 23-26,33
+  s_a06df77ee2692f::t_e15c27f4334922 128,132
+  s_a06df77ee2692f::t_66013a1ecc3d06 19-20
+src/test/java/org/jotaro/jotarocode/agent/subagent/SubagentRunnerTest.java
+  s_a06df77ee2692f::t_47c7f54f744ac9 119
+src/main/java/org/jotaro/jotarocode/tui/SingleColumnLineReader.java
+  s_a06df77ee2692f::t_78ec703e142a1c 38
+  s_a06df77ee2692f::t_ded9d29ccee074 451-464
+  s_a06df77ee2692f::t_a0e1ca9d813f93 84
+  s_a06df77ee2692f::t_4f01c3a2d5e813 514,517,535-537
+src/main/java/org/jotaro/jotarocode/agent/subagent/SubagentRunner.java
+  s_a06df77ee2692f::t_7b5b61930500f8 225,232,236-249
+  s_a06df77ee2692f::t_e1d399c4351342 214-220
+  s_a06df77ee2692f::t_656ec2a20fb570 9
+  s_a06df77ee2692f::t_8a618ba4b811fe 40
+  s_a06df77ee2692f::t_a5797ab82190c6 174-175,178-179,181-191,197-208
+  s_a06df77ee2692f::t_c16fd07a272d79 23-24
+src/main/java/org/jotaro/jotarocode/tui/ToolQuestionnaire.java
+  s_a06df77ee2692f::t_bc905348326dfb 31-33
+  s_a06df77ee2692f::t_cc82928cc6af65 57-60
+src/test/java/org/jotaro/jotarocode/tui/ToolQuestionnaireTest.java
+  s_a06df77ee2692f::t_baa9fb85d958fb 36-37
+src/main/java/org/jotaro/jotarocode/agent/runtime/SubagentScope.java
+  s_a06df77ee2692f::t_b23489b68cce59 3
+  s_a06df77ee2692f::t_794fa18a3efaac 16,20-21
+src/test/java/org/jotaro/jotarocode/tui/SubagentPaneTest.java
+  s_a06df77ee2692f::t_d1f72ccd761dd2 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "f44571a25eef822b69c2d4714018a0e09d4cefe4",
+  "prompts": {},
+  "sessions": {
+    "s_a06df77ee2692f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "44fe6d06-2e69-4a38-b4d3-70339c242bfd",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
