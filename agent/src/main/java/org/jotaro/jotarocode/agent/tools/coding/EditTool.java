@@ -20,6 +20,16 @@ import java.util.List;
 @Component
 public class EditTool implements ToolContributor {
 
+    @Override
+    public String displayLabel() {
+        return "Edit";
+    }
+
+    @Override
+    public boolean requiresConfirmation() {
+        return true;
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "edit",
             description = "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, "

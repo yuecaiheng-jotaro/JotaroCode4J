@@ -23,6 +23,8 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -34,6 +36,9 @@ import java.util.concurrent.ConcurrentMap;
 @Service
 public class AgentSessionServiceImpl implements AgentSessionService {
 
+    private static final long SESSION_TTL_MS = Duration.ofHours(2).toMillis();
+    private static final int MAX_SESSIONS = 200;
+
     @Resource
     private JotaroAgentFactory jotaroAgentFactory;
     @Resource
@@ -44,15 +49,18 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     private SkillCatalog skillCatalog;
 
     private final ConcurrentMap<String, JotaroAgent> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Long> lastAccess = new ConcurrentHashMap<>();
 
     @Override
     public CreateSessionResponse create(CreateSessionRequest request) {
+        evictExpiredSessions();
         CreateSessionRequest safeRequest = request == null ? new CreateSessionRequest() : request;
         String model = StringUtils.hasText(safeRequest.getModel()) ? safeRequest.getModel() : jotaroAgentFactory.defaultModel();
         String sessionId = UUID.randomUUID().toString();
         JotaroAgent agent = jotaroAgentFactory.create(model, safeRequest.getSystemPrompt());
         agent.subscribe(event -> sseService.send(sessionId, toView(event)));
         sessions.put(sessionId, agent);
+        lastAccess.put(sessionId, System.currentTimeMillis());
         return CreateSessionResponse.builder().sessionId(sessionId).model(model).build();
     }
 
@@ -130,7 +138,36 @@ public class AgentSessionServiceImpl implements AgentSessionService {
         if (agent == null) {
             throw new BizException("会话不存在: " + sessionId);
         }
+        lastAccess.put(sessionId, System.currentTimeMillis());
         return agent;
+    }
+
+    private void evictExpiredSessions() {
+        long now = System.currentTimeMillis();
+        for (Map.Entry<String, Long> entry : lastAccess.entrySet()) {
+            String id = entry.getKey();
+            JotaroAgent agent = sessions.get(id);
+            if (agent == null) {
+                lastAccess.remove(id);
+                continue;
+            }
+            if (!agent.isRunning() && now - entry.getValue() > SESSION_TTL_MS) {
+                sessions.remove(id);
+                lastAccess.remove(id);
+            }
+        }
+        if (sessions.size() >= MAX_SESSIONS) {
+            lastAccess.entrySet().stream()
+                    .filter(e -> {
+                        JotaroAgent agent = sessions.get(e.getKey());
+                        return agent != null && !agent.isRunning();
+                    })
+                    .min(Map.Entry.comparingByValue())
+                    .ifPresent(oldest -> {
+                        sessions.remove(oldest.getKey());
+                        lastAccess.remove(oldest.getKey());
+                    });
+        }
     }
 
     private void requireContent(String content) {

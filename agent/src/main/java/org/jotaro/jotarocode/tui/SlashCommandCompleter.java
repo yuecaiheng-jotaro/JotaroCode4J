@@ -15,7 +15,7 @@ import java.util.function.Supplier;
  */
 final class SlashCommandCompleter implements Completer {
 
-    private static final List<Command> COMMANDS = List.of(
+    static final List<Command> COMMANDS = List.of(
             new Command("/help", "显示命令", null),
             new Command("/exit", "退出", null),
             new Command("/quit", "退出", null),
@@ -59,6 +59,6 @@ final class SlashCommandCompleter implements Completer {
                 .forEach(value -> candidates.add(new Candidate(value, value, null, null, suffix, null, false)));
     }
 
-    private record Command(String name, String description, String suffix) {
+    record Command(String name, String description, String suffix) {
     }
 }

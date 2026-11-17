@@ -5,14 +5,16 @@ import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.CallbackAgentTool;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
-import org.jotaro.jotarocode.agent.search.WebSearchClient;
 import org.jotaro.jotarocode.agent.tools.SubagentTool;
 import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
 import org.jotaro.jotarocode.config.JotaroAgentProperties;
 import org.jotaro.jotarocode.exception.BizException;
 import org.jotaro.jotarocode.mcp.McpToolCatalog;
+import org.jotaro.jotarocode.mcp.McpToolNames;
 import org.jotaro.jotarocode.skill.SkillCatalog;
+import org.jotaro.jotarocode.tui.ToolGlance;
+import org.jotaro.jotarocode.tui.ToolQuestionnaire;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +48,6 @@ public class JotaroAgentFactory {
     private SkillCatalog skillCatalog;
     @Resource
     private McpToolCatalog mcpToolCatalog;
-    @Resource
-    private WebSearchClient webSearchClient;
 
     private List<AgentTool> localTools = List.of();
     private List<AgentTool> tools = List.of();
@@ -55,12 +55,6 @@ public class JotaroAgentFactory {
     @PostConstruct
     void registerTools() {
         this.localTools = adaptTools(contributors);
-        if (!RagBases.enabled(properties.getRag() == null ? List.of() : properties.getRag().getBases())) {
-            this.localTools = localTools.stream().filter(tool -> !"rag".equals(tool.name())).toList();
-        }
-        if (webSearchClient != null && !webSearchClient.enabled()) {
-            this.localTools = localTools.stream().filter(tool -> !"webSearch".equals(tool.name())).toList();
-        }
         this.tools = merge(localTools, mcpToolCatalog.callbacks());
         if (contributors == null) {
             return;
@@ -118,17 +112,27 @@ public class JotaroAgentFactory {
 
     /**
      * 关掉 Spring AI 的自动执行后，模型仍然需要 {@code ToolCallback} 才能看到参数定义。
-     * 这里保留 callback 供模型声明使用，真正调用发生在循环里的 {@code callback.call}。
+     * 这里按每个 {@link ToolContributor} 的 {@code enabled()} 过滤，并自动同步其标签、确认策略和执行模式。
      */
     private static List<AgentTool> adaptTools(List<ToolContributor> contributors) {
         if (contributors == null || contributors.isEmpty()) {
             return List.of();
         }
-        // ToolCallbacks 去扫@Tool的方法，装载成ToolCallback
-        ToolCallback[] callbacks = ToolCallbacks.from(contributors.toArray());
         List<AgentTool> agentTools = new ArrayList<>();
-        for (ToolCallback callback : callbacks) {
-            agentTools.add(new CallbackAgentTool(callback));
+        for (ToolContributor contributor : contributors) {
+            if (contributor == null || !contributor.enabled()) {
+                continue;
+            }
+            ToolCallback[] callbacks = ToolCallbacks.from(contributor);
+            for (ToolCallback callback : callbacks) {
+                CallbackAgentTool tool = new CallbackAgentTool(callback, contributor.executionMode());
+                McpToolNames.registerBuiltin(tool.name());
+                ToolGlance.registerLabel(tool.name(), contributor.displayLabel());
+                if (contributor.requiresConfirmation()) {
+                    ToolQuestionnaire.registerAsk(tool.name());
+                }
+                agentTools.add(tool);
+            }
         }
         return agentTools;
     }

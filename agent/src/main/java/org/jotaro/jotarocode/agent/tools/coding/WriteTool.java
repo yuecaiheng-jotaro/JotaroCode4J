@@ -13,6 +13,16 @@ import java.nio.file.Path;
 @Component
 public class WriteTool implements ToolContributor {
 
+    @Override
+    public String displayLabel() {
+        return "Write";
+    }
+
+    @Override
+    public boolean requiresConfirmation() {
+        return true;
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "write",
             description = "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. "

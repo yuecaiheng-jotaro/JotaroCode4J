@@ -25,6 +25,11 @@ public class GrepTool implements ToolContributor {
 
     private static final int DEFAULT_LIMIT = 100;
 
+    @Override
+    public String displayLabel() {
+        return "Grep";
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "grep",
             description = "Search file contents for a pattern. Returns matching lines with file paths and line numbers. "

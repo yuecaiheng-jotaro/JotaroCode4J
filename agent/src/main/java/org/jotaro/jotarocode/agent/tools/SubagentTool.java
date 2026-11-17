@@ -33,6 +33,11 @@ public class SubagentTool implements ToolContributor {
 
     private List<AgentTool> childTools = List.of();
 
+    @Override
+    public String displayLabel() {
+        return "Agent";
+    }
+
     /**
      * 工厂装配完全部工具后调用。子代理拿到除自己以外的工具。
      */

@@ -8,11 +8,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /** 处理一次模型回复中的工具调用，按调用顺序返回结果。 */
 final class ToolBatchExecutor {
+
+    private static final AtomicInteger THREAD_ID = new AtomicInteger(1);
+    private static final ExecutorService TOOL_EXECUTOR = Executors.newCachedThreadPool(runnable -> {
+        Thread thread = new Thread(runnable, "jotaro-tool-" + THREAD_ID.getAndIncrement());
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final AgentLoopRequest request;
     private final RunControl control;
@@ -110,7 +120,7 @@ final class ToolBatchExecutor {
                 } finally {
                     RunControl.install(previous);
                 }
-            })));
+            }), TOOL_EXECUTOR));
         }
         List<ToolOutcome> outcomes = new ArrayList<>();
         for (CompletableFuture<ToolOutcome> future : futures) {

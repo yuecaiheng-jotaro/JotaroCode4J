@@ -19,6 +19,11 @@ public class LsTool implements ToolContributor {
 
     private static final int DEFAULT_LIMIT = 500;
 
+    @Override
+    public String displayLabel() {
+        return "List";
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "ls",
             description = "List directory contents. Returns entries sorted alphabetically, with '/' suffix for directories. "

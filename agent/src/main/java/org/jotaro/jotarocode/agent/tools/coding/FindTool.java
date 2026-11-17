@@ -20,6 +20,11 @@ public class FindTool implements ToolContributor {
 
     private static final int DEFAULT_LIMIT = 1000;
 
+    @Override
+    public String displayLabel() {
+        return "Find";
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "find",
             description = "Search for files by glob pattern. Returns matching file paths relative to the search directory. "

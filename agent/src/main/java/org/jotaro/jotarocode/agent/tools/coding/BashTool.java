@@ -12,6 +12,16 @@ import java.util.List;
 @Component
 public class BashTool implements ToolContributor {
 
+    @Override
+    public String displayLabel() {
+        return "Bash";
+    }
+
+    @Override
+    public boolean requiresConfirmation() {
+        return true;
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "bash",
             description = "Execute a bash command in the current working directory. Returns stdout and stderr. "

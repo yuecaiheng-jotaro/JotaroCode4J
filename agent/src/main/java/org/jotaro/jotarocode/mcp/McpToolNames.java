@@ -1,17 +1,28 @@
 package org.jotaro.jotarocode.mcp;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** 把 MCP 服务名和工具名收成模型能调用的一个名字，并躲开内置工具。 */
 public final class McpToolNames {
 
     static final int LIMIT = 64;
-    private static final Set<String> BUILTIN = Set.of(
-            "read", "write", "edit", "bash", "powershell", "ls", "grep", "find",
-            "currentTime", "terminate", "subagent", "rag", "webSearch"
-    );
+    private static final Set<String> BUILTIN = ConcurrentHashMap.newKeySet();
+
+    static {
+        BUILTIN.addAll(Set.of(
+                "read", "write", "edit", "bash", "powershell", "ls", "grep", "find",
+                "currentTime", "terminate", "subagent", "rag", "webSearch"
+        ));
+    }
 
     private McpToolNames() {
+    }
+
+    public static void registerBuiltin(String name) {
+        if (name != null && !name.isBlank()) {
+            BUILTIN.add(name.trim());
+        }
     }
 
     public static boolean builtin(String name) {

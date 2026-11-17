@@ -223,15 +223,14 @@ public final class JotaroAgentTui {
 
     private void handleCommand(LineReader reader, String line) {
         if ("/help".equals(line)) {
-            printLines(reader, List.of(
-                    "/help          显示命令",
-                    "/exit          退出",
-                    "/abort         取消当前运行",
-                    "/reset         清空当前会话",
-                    "/model         查看模型",
-                    "/model <name>  切换模型",
+            java.util.ArrayList<String> helpLines = new java.util.ArrayList<>();
+            for (SlashCommandCompleter.Command command : SlashCommandCompleter.COMMANDS) {
+                helpLines.add(String.format("%-15s %s", command.name(), command.description()));
+            }
+            helpLines.addAll(List.of(
+                    "/model <name>   切换模型",
                     "Up / Down       普通文字回溯已发送的内容；/ 后面在候选里上下移动",
-                    "Enter           / 后面回车选定。/model 会先补上空格，再选模型名",
+                    "Enter           / 后面回车选定。/model 会直接定位当前模型",
                     "Esc / Ctrl+C    候选列表开着时取消选择并收起列表",
                     "Ctrl+C          空闲时清空输入，运行时中断任务",
                     "Ctrl+Z          强制退出",
@@ -242,6 +241,7 @@ public final class JotaroAgentTui {
                     "粘贴            超过 5 行或 800 字收成 [Pasted text #1 +N lines]，发给模型的是全文",
                     "Ctrl+V          粘贴图片，输入框显示 [Image #1]。Cmd+V 仍粘贴文字"
             ));
+            printLines(reader, helpLines);
             return;
         }
         if ("/exit".equals(line) || "/quit".equals(line)) {

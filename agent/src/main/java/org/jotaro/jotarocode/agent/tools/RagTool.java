@@ -16,6 +16,18 @@ public class RagTool implements ToolContributor {
     @Resource
     private JotaroAgentProperties properties;
 
+    @Override
+    public boolean enabled() {
+        return properties != null
+                && properties.getRag() != null
+                && RagBases.enabled(properties.getRag().getBases());
+    }
+
+    @Override
+    public String displayLabel() {
+        return "Rag";
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "rag",
             description = "Search a configured knowledge base. Use when the task needs recorded documents, "

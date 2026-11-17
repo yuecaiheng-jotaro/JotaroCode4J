@@ -30,6 +30,11 @@ public class ReadTool implements ToolContributor {
             "bmp", "image/bmp"
     );
 
+    @Override
+    public String displayLabel() {
+        return "Read";
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "read",
             description = "Read the contents of a file. Supports text files and images (jpg, png, gif, webp, bmp). "

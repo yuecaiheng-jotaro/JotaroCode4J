@@ -15,6 +15,16 @@ public class WebSearchTool implements ToolContributor {
     @Resource
     private WebSearchClient client;
 
+    @Override
+    public boolean enabled() {
+        return client == null || client.enabled();
+    }
+
+    @Override
+    public String displayLabel() {
+        return "Search";
+    }
+
     @Tool(
             name = "webSearch",
             description = "Search the web for real-time information, documentation, news, or external facts. "

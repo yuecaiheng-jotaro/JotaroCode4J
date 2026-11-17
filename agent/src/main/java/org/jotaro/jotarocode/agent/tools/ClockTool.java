@@ -8,6 +8,11 @@ import java.time.OffsetDateTime;
 @Component
 public class ClockTool implements ToolContributor {
 
+    @Override
+    public String displayLabel() {
+        return "Time";
+    }
+
     @org.springframework.ai.tool.annotation.Tool(name = "currentTime", description = "返回当前本地时间")
     public String currentTime() {
         return OffsetDateTime.now().toString();

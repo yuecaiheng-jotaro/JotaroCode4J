@@ -8,20 +8,31 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 复杂工具执行前的问卷。只读工具直接放行。
  * {@code y} 允许这次，{@code a} 本次会话全部允许，{@code n} 拒绝。
  * 其他文字当作提示交回模型，不执行这次调用。
  */
-final class ToolQuestionnaire {
+public final class ToolQuestionnaire {
 
-    static final Set<String> ASK = Set.of("bash", "powershell", "write", "edit");
+    static final Set<String> ASK = ConcurrentHashMap.newKeySet();
     private static volatile Set<String> extra = Set.of();
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final int PREVIEW_LIMIT = 400;
 
+    static {
+        ASK.addAll(Set.of("bash", "powershell", "write", "edit"));
+    }
+
     private ToolQuestionnaire() {
+    }
+
+    public static void registerAsk(String toolName) {
+        if (toolName != null && !toolName.isBlank()) {
+            ASK.add(toolName.trim());
+        }
     }
 
     static void remember(Collection<String> names) {

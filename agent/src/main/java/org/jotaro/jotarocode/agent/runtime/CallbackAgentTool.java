@@ -7,15 +7,26 @@ public final class CallbackAgentTool implements AgentTool {
 
     private final ToolCallback callback;
     private final String name;
+    private final ToolExecutionMode executionMode;
 
     public CallbackAgentTool(ToolCallback callback) {
+        this(callback, null);
+    }
+
+    public CallbackAgentTool(ToolCallback callback, ToolExecutionMode executionMode) {
         this.callback = callback;
         this.name = callback.getToolDefinition().name();
+        this.executionMode = executionMode;
     }
 
     @Override
     public String name() {
         return name;
+    }
+
+    @Override
+    public ToolExecutionMode executionMode() {
+        return executionMode;
     }
 
     @Override

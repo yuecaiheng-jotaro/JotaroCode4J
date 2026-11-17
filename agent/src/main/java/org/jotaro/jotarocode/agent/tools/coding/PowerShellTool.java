@@ -18,6 +18,16 @@ public class PowerShellTool implements ToolContributor {
     private static final String UTF8_PREFIX =
             "try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}\n";
 
+    @Override
+    public String displayLabel() {
+        return "PowerShell";
+    }
+
+    @Override
+    public boolean requiresConfirmation() {
+        return true;
+    }
+
     @org.springframework.ai.tool.annotation.Tool(
             name = "powershell",
             description = "Execute a PowerShell command in the current working directory. Returns stdout and stderr. "

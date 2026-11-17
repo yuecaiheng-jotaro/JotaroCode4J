@@ -3,14 +3,24 @@ package org.jotaro.jotarocode.tui;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * 把工具调用收成 Claude 那种一行：{@code Read src/App.java}，而不是整段 JSON。
  */
-final class ToolGlance {
+public final class ToolGlance {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final Map<String, String> DYNAMIC_LABELS = new ConcurrentHashMap<>();
 
     private ToolGlance() {
+    }
+
+    public static void registerLabel(String toolName, String label) {
+        if (toolName != null && !toolName.isBlank() && label != null && !label.isBlank()) {
+            DYNAMIC_LABELS.put(toolName, label.trim());
+        }
     }
 
     static String call(String name, String arguments) {
@@ -39,6 +49,10 @@ final class ToolGlance {
     static String label(String name) {
         if (name == null || name.isBlank()) {
             return "Tool";
+        }
+        String registered = DYNAMIC_LABELS.get(name);
+        if (registered != null) {
+            return registered;
         }
         return switch (name) {
             case "read" -> "Read";
