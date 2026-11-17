@@ -26,7 +26,8 @@ public class JotaroAgentTuiRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         ToolQuestionnaire.remember(jotaroAgentFactory.mcpToolNames());
-        JotaroAgent agent = jotaroAgentFactory.create(properties.getModel(), properties.getSystemPrompt());
-        new JotaroAgentTui(agent, chatClientRegistry, properties.getModel()).run();
+        String initialModel = jotaroAgentFactory.defaultModel();
+        JotaroAgent agent = jotaroAgentFactory.create(initialModel, properties.getSystemPrompt());
+        new JotaroAgentTui(agent, chatClientRegistry, initialModel).run();
     }
 }

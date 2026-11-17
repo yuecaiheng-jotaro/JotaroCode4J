@@ -1,24 +1,24 @@
 #!/usr/bin/env zsh
 set -euo pipefail
 
-REPO_DIR="/Users/yuecaiheng.jotaro/study/pi-agent"
+SCRIPT_DIR="${0:A:h}"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET_JAR="$REPO_DIR/agent/target/jotaro-agent-0.0.1-SNAPSHOT.jar"
+LOCAL_JAR="$SCRIPT_DIR/jotaro-agent.jar"
 INSTALLED_JAR="$HOME/.jotaro/bin/jotaro-agent.jar"
 
 JAR_PATH=""
-if [[ -f "$TARGET_JAR" && -f "$INSTALLED_JAR" ]]; then
-  if [[ "$TARGET_JAR" -nt "$INSTALLED_JAR" ]]; then
-    JAR_PATH="$TARGET_JAR"
-  else
-    JAR_PATH="$INSTALLED_JAR"
+for candidate in "$TARGET_JAR" "$LOCAL_JAR" "$INSTALLED_JAR"; do
+  if [[ -f "$candidate" ]]; then
+    if [[ -z "$JAR_PATH" || "$candidate" -nt "$JAR_PATH" ]]; then
+      JAR_PATH="$candidate"
+    fi
   fi
-elif [[ -f "$TARGET_JAR" ]]; then
-  JAR_PATH="$TARGET_JAR"
-elif [[ -f "$INSTALLED_JAR" ]]; then
-  JAR_PATH="$INSTALLED_JAR"
-else
-  echo "未找到打包好的 Jotaro Agent jar，请先执行打包命令：" >&2
-  echo "  $REPO_DIR/package-agent.sh" >&2
+done
+
+if [[ -z "$JAR_PATH" ]]; then
+  echo "未找到打包好的 Jotaro Agent jar，请先在项目根目录执行打包命令：" >&2
+  echo "  ./package-agent.sh" >&2
   exit 1
 fi
 

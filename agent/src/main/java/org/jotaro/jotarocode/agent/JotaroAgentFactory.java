@@ -5,6 +5,7 @@ import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.CallbackAgentTool;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
+import org.jotaro.jotarocode.agent.search.WebSearchClient;
 import org.jotaro.jotarocode.agent.tools.SubagentTool;
 import org.jotaro.jotarocode.agent.tools.ToolContributor;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
@@ -45,6 +46,8 @@ public class JotaroAgentFactory {
     private SkillCatalog skillCatalog;
     @Resource
     private McpToolCatalog mcpToolCatalog;
+    @Resource
+    private WebSearchClient webSearchClient;
 
     private List<AgentTool> localTools = List.of();
     private List<AgentTool> tools = List.of();
@@ -54,6 +57,9 @@ public class JotaroAgentFactory {
         this.localTools = adaptTools(contributors);
         if (!RagBases.enabled(properties.getRag() == null ? List.of() : properties.getRag().getBases())) {
             this.localTools = localTools.stream().filter(tool -> !"rag".equals(tool.name())).toList();
+        }
+        if (webSearchClient != null && !webSearchClient.enabled()) {
+            this.localTools = localTools.stream().filter(tool -> !"webSearch".equals(tool.name())).toList();
         }
         this.tools = merge(localTools, mcpToolCatalog.callbacks());
         if (contributors == null) {
@@ -82,7 +88,9 @@ public class JotaroAgentFactory {
     }
 
     public JotaroAgent create(String model, String systemPrompt) {
-        String resolvedModel = StringUtils.hasText(model) ? model : properties.getModel();
+        String resolvedModel = StringUtils.hasText(model) && chatClientRegistry.get(model) != null
+                ? model
+                : defaultModel();
         String resolvedPrompt = StringUtils.hasText(systemPrompt) ? systemPrompt : properties.getSystemPrompt();
         String skills = skillCatalog.promptSection();
         if (StringUtils.hasText(skills)) {
@@ -154,11 +162,15 @@ public class JotaroAgentFactory {
     }
 
     public String defaultModel() {
-        return properties.getModel();
+        String configured = properties.getModel();
+        if (StringUtils.hasText(configured) && chatClientRegistry.get(configured) != null) {
+            return configured;
+        }
+        return modelNames().stream().findFirst().orElse(configured);
     }
 
     public void switchModel(JotaroAgent agent, String model) {
-        String resolvedModel = StringUtils.hasText(model) ? model : properties.getModel();
+        String resolvedModel = StringUtils.hasText(model) ? model : defaultModel();
         SpringAiAssistantStreamer streamer = streamerFor(resolvedModel);
         try {
             agent.useModel(resolvedModel, streamer);

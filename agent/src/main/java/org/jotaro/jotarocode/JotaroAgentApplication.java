@@ -1,6 +1,7 @@
 package org.jotaro.jotarocode;
 
 import org.jotaro.jotarocode.config.JotaroAgentProperties;
+import org.jotaro.jotarocode.config.ProviderApiKeys;
 import org.springframework.ai.model.chat.client.autoconfigure.ChatClientAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -22,6 +23,7 @@ public class JotaroAgentApplication {
 
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(JotaroAgentApplication.class);
+        application.addInitializers(new ProviderApiKeys());
         if (tuiRequested(args)) {
             application.setWebApplicationType(WebApplicationType.NONE);
             args = ensureTuiMode(args);

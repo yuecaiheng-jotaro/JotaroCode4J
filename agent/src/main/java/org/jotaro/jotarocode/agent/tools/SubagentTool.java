@@ -70,6 +70,9 @@ public class SubagentTool implements ToolContributor {
         String model = scope != null && scope.model() != null && !scope.model().isBlank()
                 ? scope.model()
                 : properties.getModel();
+        if (registry.get(model) == null) {
+            model = registry.keys().stream().sorted().findFirst().orElse(model);
+        }
         SubagentRunner.Environment environment = new SubagentRunner.Environment(
                 childTools,
                 model,

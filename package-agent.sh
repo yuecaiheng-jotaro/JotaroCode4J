@@ -12,8 +12,8 @@ INSTALL_DIR="$HOME/.jotaro/bin"
 mkdir -p "$INSTALL_DIR"
 
 cp "$JAR_SRC" "$INSTALL_DIR/jotaro-agent.jar"
-cp "$SCRIPT_DIR/bin/start-jotaro.sh" "$INSTALL_DIR/start-jotaro"
-chmod +x "$SCRIPT_DIR/bin/start-jotaro.sh" "$INSTALL_DIR/start-jotaro"
+chmod +x "$SCRIPT_DIR/bin/start-jotaro.sh"
+ln -sf "$SCRIPT_DIR/bin/start-jotaro.sh" "$INSTALL_DIR/start-jotaro"
 
 ZSHRC="$HOME/.zshrc"
 touch "$ZSHRC"

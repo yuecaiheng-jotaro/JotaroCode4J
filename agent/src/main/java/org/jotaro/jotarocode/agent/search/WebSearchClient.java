@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.jotaro.jotarocode.config.JotaroAgentProperties;
+import org.jotaro.jotarocode.config.ProviderApiKeys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -156,14 +157,18 @@ public class WebSearchClient {
         return builder.toString();
     }
 
+    public boolean enabled() {
+        return StringUtils.hasText(resolveApiKey());
+    }
+
     private String resolveApiKey() {
         if (properties != null && properties.getWebSearch() != null) {
             String configured = properties.getWebSearch().getApiKey();
-            if (StringUtils.hasText(configured) && !PLACEHOLDER_KEY.equals(configured.trim())) {
+            if (ProviderApiKeys.isConfigured(configured)) {
                 return configured.trim();
             }
         }
-        if (StringUtils.hasText(zhipuApiKey) && !PLACEHOLDER_KEY.equals(zhipuApiKey.trim())) {
+        if (ProviderApiKeys.isConfigured(zhipuApiKey)) {
             return zhipuApiKey.trim();
         }
         return "";
