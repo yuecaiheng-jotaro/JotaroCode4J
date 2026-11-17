@@ -66,7 +66,7 @@ public final class JotaroAgentTui {
 
     public void run() throws Exception {
         Terminal terminal = TerminalBuilder.builder().system(true).dumb(true).build();
-        reader = new SingleColumnLineReader(terminal, agent::isRunning);
+        reader = new SingleColumnLineReader(terminal, agent::isRunning, () -> this.model);
         reader.setCompleter(new SlashCommandCompleter(() -> registry.keys().stream().sorted().toList()));
         reader.setHistory(new DefaultHistory());
         reader.installInteractionKeys();

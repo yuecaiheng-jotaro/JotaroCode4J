@@ -55,7 +55,7 @@ class SingleColumnLineReaderTest {
                 new int[2]);
 
         List<String> lines = displayed.toString().lines().filter(line -> !line.isBlank()).toList();
-        assertEquals(List.of("/help", "/exit", "/model"), lines.stream().map(String::trim).toList());
+        assertEquals(List.of("● /help", "/exit", "/model"), lines.stream().map(String::trim).toList());
     }
 
     @Test
@@ -106,8 +106,28 @@ class SingleColumnLineReaderTest {
 
     @Test
     void upSelectsTheLastSlashCommandThenAModel() throws Exception {
-        String selected = read("/\u001b[A\n\u001b[B\n");
-        assertEquals("/model deepseek-chat", selected.trim());
+        assertEquals("/model deepseek-chat", read("/\u001b[A\n\n").trim());
+        assertEquals("/model glm-4.6", read("/\u001b[A\n\u001b[B\n").trim());
+    }
+
+    @Test
+    void enteringModelCommandPreselectsCurrentModel() throws Exception {
+        Terminal terminal = new DumbTerminal(
+                "test",
+                "xterm-256color",
+                new ByteArrayInputStream(new byte[0]),
+                new ByteArrayOutputStream(),
+                StandardCharsets.UTF_8);
+        terminal.setSize(new org.jline.terminal.Size(80, 24));
+        SingleColumnLineReader reader = new SingleColumnLineReader(terminal, () -> false, () -> "glm-4.6");
+        reader.setCompleter(new SlashCommandCompleter(() -> MODELS));
+        reader.installInteractionKeys();
+        reader.setAutosuggestion(LineReader.SuggestionType.COMPLETER);
+
+        type(reader, "/model");
+        assertTrue(reader.getWidgets().get("jotaro-accept").apply());
+        assertEquals("/model glm-4.6", reader.getBuffer().toString());
+        assertMenu(reader.visibleMenu(), "glm-4.6");
     }
 
     @Test
@@ -153,9 +173,9 @@ class SingleColumnLineReaderTest {
         assertTrue(reader.getWidgets().get("jotaro-down").apply());
 
         List<String> lines = reader.paint().toString().lines().toList();
-        assertTrue(lines.contains("deepseek-chat"), lines.toString());
-        assertTrue(lines.contains("glm-4.6"), lines.toString());
-        assertTrue(lines.contains("qwen4-max-preview"), lines.toString());
+        assertTrue(lines.contains("  deepseek-chat"), lines.toString());
+        assertTrue(lines.contains("● glm-4.6"), lines.toString());
+        assertTrue(lines.contains("  qwen4-max-preview"), lines.toString());
     }
 
     @Test
@@ -368,8 +388,12 @@ class SingleColumnLineReaderTest {
     }
 
     private static void assertMenu(AttributedString menu, String highlighted) {
-        assertEquals(List.of("deepseek-chat", "glm-4.6", "qwen4-max-preview"), menu.toString().lines().toList());
+        List<String> expected = List.of("deepseek-chat", "glm-4.6", "qwen4-max-preview").stream()
+                .map(model -> (model.equals(highlighted) ? "● " : "  ") + model)
+                .toList();
+        assertEquals(expected, menu.toString().lines().toList());
         long highlight = AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN).bold().getStyle();
+        assertEquals(highlight, menu.styleAt(menu.toString().indexOf("● " + highlighted)).getStyle());
         assertEquals(highlight, menu.styleAt(menu.toString().indexOf(highlighted)).getStyle());
         for (String other : List.of("deepseek-chat", "glm-4.6", "qwen4-max-preview")) {
             if (other.equals(highlighted)) {

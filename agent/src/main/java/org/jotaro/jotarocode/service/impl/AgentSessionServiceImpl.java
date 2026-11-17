@@ -42,6 +42,7 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     private ApplicationEventPublisher eventPublisher;
     @Resource
     private SkillCatalog skillCatalog;
+
     private final ConcurrentMap<String, JotaroAgent> sessions = new ConcurrentHashMap<>();
 
     @Override

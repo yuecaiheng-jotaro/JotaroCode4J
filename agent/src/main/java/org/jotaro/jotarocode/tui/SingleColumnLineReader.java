@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * 补全候选按一列往下排。JLine 默认按终端宽度把短名字横着铺开，
@@ -45,14 +46,20 @@ final class SingleColumnLineReader extends LineReaderImpl {
     private final PasteChunks pastes = new PasteChunks();
 
     private final BooleanSupplier runActive;
+    private final Supplier<String> currentModel;
 
     SingleColumnLineReader(Terminal terminal) {
-        this(terminal, () -> false);
+        this(terminal, () -> false, () -> null);
     }
 
     SingleColumnLineReader(Terminal terminal, BooleanSupplier runActive) {
+        this(terminal, runActive, () -> null);
+    }
+
+    SingleColumnLineReader(Terminal terminal, BooleanSupplier runActive, Supplier<String> currentModel) {
         super(terminal, "jotaro", new HashMap<>());
         this.runActive = runActive;
+        this.currentModel = currentModel == null ? () -> null : currentModel;
     }
 
     /**
@@ -353,11 +360,24 @@ final class SingleColumnLineReader extends LineReaderImpl {
         if (matches.size() == 1) {
             Candidate chosen = matches.get(0);
             writeCandidate(chosen, parsed, true);
+            if ("/model".equals(chosen.value())) {
+                openDefaultModel();
+                return true;
+            }
             clearSlashList();
             if (chosen.suffix() != null && !chosen.suffix().isEmpty()) {
                 return true;
             }
             return acceptLine();
+        }
+        if (modelArgument(parsed)) {
+            List<Candidate> all = allModels();
+            if (!all.isEmpty()) {
+                Candidate chosen = all.get(defaultModelIndex(all));
+                writeCandidate(chosen, parsed, true);
+                clearSlashList();
+                return acceptLine();
+            }
         }
         rememberDraft();
         slashChoices = List.copyOf(matches);
@@ -371,11 +391,29 @@ final class SingleColumnLineReader extends LineReaderImpl {
     private boolean acceptChosen(Candidate chosen, ParsedLine parsed) {
         if (!suffixApplied(chosen, parsed)) {
             writeCandidate(chosen, parsed, true);
+            if ("/model".equals(chosen.value())) {
+                openDefaultModel();
+                return true;
+            }
             clearSlashList();
             return true;
         }
         clearSlashList();
         return acceptLine();
+    }
+
+    private void openDefaultModel() {
+        List<Candidate> all = allModels();
+        if (all.isEmpty()) {
+            clearSlashList();
+            return;
+        }
+        rememberDraft();
+        slashChoices = List.copyOf(all);
+        slashIndex = defaultModelIndex(slashChoices);
+        Candidate chosen = slashChoices.get(slashIndex);
+        writeCandidate(chosen, currentLine(), false);
+        showList(chosen);
     }
 
     /**
@@ -412,8 +450,15 @@ final class SingleColumnLineReader extends LineReaderImpl {
         }
     }
 
-    private static int openingModelIndex(List<Candidate> choices, String word, boolean down) {
+    private int openingModelIndex(List<Candidate> choices, String word, boolean down) {
         if (word == null || word.isEmpty()) {
+            String active = currentModel.get();
+            if (active != null && !active.isBlank()) {
+                int currentIdx = indexOf(choices, active.trim());
+                if (currentIdx >= 0) {
+                    return doAutosuggestion ? shift(currentIdx, down, choices.size()) : currentIdx;
+                }
+            }
             return down ? 0 : choices.size() - 1;
         }
         int exact = indexOf(choices, word);
@@ -425,6 +470,20 @@ final class SingleColumnLineReader extends LineReaderImpl {
             return prefix;
         }
         return down ? 0 : choices.size() - 1;
+    }
+
+    private int defaultModelIndex(List<Candidate> choices) {
+        if (choices == null || choices.isEmpty()) {
+            return 0;
+        }
+        String active = currentModel.get();
+        if (active != null && !active.isBlank()) {
+            int index = indexOf(choices, active.trim());
+            if (index >= 0) {
+                return index;
+            }
+        }
+        return 0;
     }
 
     private static int shift(int index, boolean down, int size) {
@@ -540,8 +599,10 @@ final class SingleColumnLineReader extends LineReaderImpl {
             boolean highlighted = selected != null && choice.value().equals(selected.value());
             if (highlighted) {
                 displayed.style(AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN).bold());
+                displayed.append("● ");
             } else {
                 displayed.style(AttributedStyle.DEFAULT);
+                displayed.append("  ");
             }
             displayed.append(choice.displ() == null ? choice.value() : choice.displ());
             if (choice.descr() != null && !choice.descr().isEmpty()) {
@@ -717,7 +778,38 @@ final class SingleColumnLineReader extends LineReaderImpl {
     protected void toColumns(Object items, int width, int max, AttributedStringBuilder sb,
                              Candidate selection, String completed, boolean rowsFirst,
                              boolean doMenuList, int[] out) {
+        if (items instanceof java.util.Collection<?> collection) {
+            List<Candidate> candidates = new ArrayList<>();
+            for (Object item : collection) {
+                if (item instanceof Candidate candidate) {
+                    candidates.add(candidate);
+                }
+            }
+            if (!candidates.isEmpty()) {
+                Candidate effective = selection != null ? selection : defaultCandidate(candidates);
+                sb.append(renderChoices(candidates, effective));
+                if (out != null && out.length >= 2) {
+                    out[0] = 1;
+                    out[1] = candidates.size();
+                }
+                return;
+            }
+        }
         int cell = max > 0 ? Math.min(width, max) : width;
         super.toColumns(items, cell, max, sb, selection, completed, rowsFirst, doMenuList, out);
+    }
+
+    private Candidate defaultCandidate(List<Candidate> candidates) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        try {
+            if (modelArgument(currentLine())) {
+                return candidates.get(defaultModelIndex(candidates));
+            }
+        } catch (RuntimeException ignored) {
+            // 解析异常时回退到首项
+        }
+        return candidates.get(0);
     }
 }
