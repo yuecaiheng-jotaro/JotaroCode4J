@@ -4,3 +4,5 @@ target/
 .DS_Store
 agent/src/main/resources/application-local.yaml
 .cursor
+agent/target
+rag/target
