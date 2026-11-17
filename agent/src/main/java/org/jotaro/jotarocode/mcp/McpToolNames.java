@@ -8,7 +8,7 @@ public final class McpToolNames {
     static final int LIMIT = 64;
     private static final Set<String> BUILTIN = Set.of(
             "read", "write", "edit", "bash", "powershell", "ls", "grep", "find",
-            "currentTime", "terminate", "subagent", "rag"
+            "currentTime", "terminate", "subagent", "rag", "webSearch"
     );
 
     private McpToolNames() {

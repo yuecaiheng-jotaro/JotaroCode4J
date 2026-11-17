@@ -53,6 +53,7 @@ final class ToolGlance {
             case "terminate" -> "Done";
             case "subagent" -> "Agent";
             case "rag" -> "Rag";
+            case "webSearch" -> "Search";
             default -> name;
         };
     }
