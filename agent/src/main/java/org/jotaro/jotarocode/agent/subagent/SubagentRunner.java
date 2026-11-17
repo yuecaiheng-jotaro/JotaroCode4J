@@ -25,28 +25,55 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * 跑一个或多个子代理。每个子代理是新的 {@link JotaroAgent}，只有自己的消息，看不到父对话。
- * 工具名单里去掉 {@code subagent}，所以子代理不能再往下派。
+ * 子代理（Subagent）执行器，负责隔离上下文并调度单个或多个子代理任务。
  *
- * <p>三种用法和常见编码代理一致：单个任务、一批并行任务、按顺序传递上一步结果的链。
+ * <p>核心设计原则：
+ * <ul>
+ *   <li><b>上下文隔离</b>：每个子代理都是一个全新创建的 {@link JotaroAgent}，拥有独立的消息历史，看不到父会话的冗长对话，
+ *       仅接收分配给它的具体 {@code task}，并在完成后只将最终文本结果（截断至 {@link #MAX_CHARS}）返回给父代理，从而大幅节省父会话的上下文窗口。</li>
+ *   <li><b>禁止递归派生</b>：在调用 {@link #select(List, List)} 筛选工具时，强制排除名为 {@code subagent} 的工具，防止子代理无限套娃派生孙代理。</li>
+ *   <li><b>跨线程上下文继承</b>：并行执行时通过显式传递 {@link SubagentScope} 和 {@link RunControl}，
+ *       确保子代理工作线程能继承父会话的工具确认钩子（{@code beforeToolCall}）、实时活动回调（{@code activity}）以及取消开关（父会话 abort 时子代理立即停止）。</li>
+ *   <li><b>三种调度模式</b>：支持单任务直跑、{@code tasks} 多任务并行（线程池限流 {@link #MAX_CONCURRENCY}，部分失败不中断整体）、
+ *       以及 {@code chain} 顺序流水线（支持通过 {@code {previous}} 占位符注入上一步的输出）。</li>
+ * </ul>
  */
 public final class SubagentRunner {
 
+    /** 单次批量并行或顺序链允许的最大任务数。 */
     public static final int MAX_TASKS = 8;
+
+    /** 并行模式下的最大并发工作线程数。 */
     public static final int MAX_CONCURRENCY = 4;
+
+    /** 单个子代理运行允许的最大循环步数（Turn 数量）。 */
     public static final int MAX_STEPS = 8;
+
+    /** 单个子代理返回给父代理的最大结果字符数，超出部分截断以保护父代理上下文窗口。 */
     private static final int MAX_CHARS = 50_000;
+
+    /** 子代理工具自身的名称，为子代理挑选工具时始终排除该名称以禁止递归调用。 */
     private static final String TOOL_NAME = "subagent";
+
+    /** 子代理调用实例递增序号，用于生成如 {@code explore-1} 的唯一活动 ID，方便 TUI 区分并行的多个同类子代理。 */
     private final AtomicInteger sequence = new AtomicInteger();
 
+    /**
+     * 并行或链式调用中的单个子任务项。
+     *
+     * @param agent 目标子代理角色名
+     * @param task  交给该子代理的任务描述（在 {@code chain} 模式下支持 {@code {previous}} 占位符）
+     */
     public record Task(String agent, String task) {
     }
 
     /**
-     * @param tools         父代理的工具，子代理从这里挑，并始终排除 {@code subagent}
-     * @param model         父会话当前模型
-     * @param messageWindow 子代理发给模型的消息窗口
-     * @param streamers     按模型名取流式客户端。定义里写了模型就用那个名字，否则用 {@code model}
+     * 子代理运行所需的宿主环境依赖。
+     *
+     * @param tools         父代理的全量工具列表，子代理从中按白名单挑选，并始终排除 {@code subagent}
+     * @param model         父会话当前正在使用的模型名（当子代理定义未指定模型时使用）
+     * @param messageWindow 子代理发给模型的滑动消息窗口大小
+     * @param streamers     按模型名获取对应 {@link AssistantStreamer} 的工厂函数
      */
     public record Environment(
             List<AgentTool> tools,
@@ -56,6 +83,17 @@ public final class SubagentRunner {
     ) {
     }
 
+    /**
+     * 统一执行入口：根据参数优先级分发到链式执行（{@code chain}）、并行执行（{@code tasks}）或单任务执行（{@code agent + task}）。
+     *
+     * @param agent       单任务模式下的子代理角色名
+     * @param task        单任务模式下的任务描述
+     * @param tasks       并行任务列表
+     * @param chain       顺序链式任务列表
+     * @param agents      当前可用的全部子代理角色定义
+     * @param environment 宿主运行环境
+     * @return 汇总或单次执行的最终文本报告
+     */
     public String execute(String agent,
                           String task,
                           List<Task> tasks,
@@ -74,6 +112,14 @@ public final class SubagentRunner {
         return runOne(require(agents, agent), task, environment);
     }
 
+    /**
+     * 顺序执行任务链：每一步的 {@code task} 中若包含 {@code {previous}}，会自动替换为上一步子代理的输出结果。
+     *
+     * @param chain       任务链列表
+     * @param agents      可用子代理定义
+     * @param environment 宿主运行环境
+     * @return 按步骤编号拼接的 Markdown 汇总报告
+     */
     private String runChain(List<Task> chain, List<SubagentDefinition> agents, Environment environment) {
         if (chain.size() > MAX_TASKS) {
             throw new IllegalArgumentException("chain 最多 " + MAX_TASKS + " 步，当前 " + chain.size());
@@ -82,6 +128,7 @@ public final class SubagentRunner {
         List<String> sections = new ArrayList<>();
         for (int index = 0; index < chain.size(); index++) {
             Task step = chain.get(index);
+            // 将模板中的 {previous} 替换为前序步骤的实际产出
             String prompt = step.task() == null ? "" : step.task().replace("{previous}", previous);
             if (prompt.isBlank()) {
                 throw new IllegalArgumentException("chain[" + index + "].task 不能为空");
@@ -92,10 +139,28 @@ public final class SubagentRunner {
         return String.join("\n\n", sections);
     }
 
+    /**
+     * 并行执行多个子代理任务。
+     *
+     * <p>并发与容错细节：
+     * <ul>
+     *   <li>在提交线程池前先校验全部任务参数与角色存在性，做到快速失败（Fail-fast）。</li>
+     *   <li>由于 {@link SubagentScope} 和 {@link RunControl} 都存放在 {@link ThreadLocal} 中，
+     *       必须在每个子线程内部通过 {@code SubagentScope.call} 和 {@code RunControl.install} 重新挂载，
+     *       否则子线程里的工具确认钩子、UI 活动上报以及 Ctrl+C 中断都会失效。</li>
+     *   <li>单个子任务失败不会打断其他并行任务，只有当全部任务均失败时才向上抛出 {@link IllegalStateException}。</li>
+     * </ul>
+     *
+     * @param tasks       并行任务列表
+     * @param agents      可用子代理定义
+     * @param environment 宿主运行环境
+     * @return 按原始任务顺序拼接的 Markdown 汇总报告
+     */
     private String runParallel(List<Task> tasks, List<SubagentDefinition> agents, Environment environment) {
         if (tasks.size() > MAX_TASKS) {
             throw new IllegalArgumentException("tasks 最多 " + MAX_TASKS + " 个，当前 " + tasks.size());
         }
+        // 提交前统一校验，避免部分线程已经跑起来才发现后面某个任务的 agent 名字拼错
         for (int index = 0; index < tasks.size(); index++) {
             Task step = tasks.get(index);
             if (step.task() == null || step.task().isBlank()) {
@@ -103,6 +168,7 @@ public final class SubagentRunner {
             }
             require(agents, step.agent());
         }
+        // 捕获调用线程上的父级 SubagentScope 与 RunControl，供工作线程跨线程还原
         SubagentScope.Context scope = SubagentScope.current();
         RunControl parent = RunControl.current();
         int threads = Math.min(MAX_CONCURRENCY, tasks.size());
@@ -137,6 +203,7 @@ public final class SubagentRunner {
                 }
             }
             String report = String.join("\n\n", sections);
+            // 仅当整批任务全部失败时才作为异常抛出，触发工具调用层的 error 标记
             if (failures == tasks.size()) {
                 throw new IllegalStateException(report);
             }
@@ -149,6 +216,14 @@ public final class SubagentRunner {
         }
     }
 
+    /**
+     * 实例化并运行单个子代理，订阅其内部事件以收集最终回复文本并向父级上报实时活动。
+     *
+     * @param definition  子代理角色定义
+     * @param task        具体任务指令
+     * @param environment 宿主运行环境
+     * @return 截断处理后的子代理最终答复文本
+     */
     private String runOne(SubagentDefinition definition, String task, Environment environment) {
         String model = definition.model() == null || definition.model().isBlank()
                 ? environment.model()
@@ -158,7 +233,7 @@ public final class SubagentRunner {
         }
         AssistantStreamer streamer = environment.streamers().apply(model);
         RunControl parent = RunControl.current();
-        // 为子任务创建独立历史，沿用父运行的取消控制和工具审批。
+        // 为子任务创建拥有独立消息历史的 JotaroAgent，但沿用父运行的取消开关 parent 和工具审批钩子
         JotaroAgent child = new JotaroAgent(
                 prompt(definition),
                 select(environment.tools(), definition.tools()),
@@ -174,8 +249,10 @@ public final class SubagentRunner {
         }
         Consumer<SubagentActivity> activity = scope == null ? null : scope.activity();
         String id = definition.name() + "-" + sequence.incrementAndGet();
+        // text 始终只保留最后一轮 AssistantMessage 的正文作为子代理最终结论
         StringBuilder text = new StringBuilder();
         AtomicBoolean limited = new AtomicBoolean();
+        // 标记当前 Turn 是否已经通过流式增量上报过文本，避免在 MESSAGE_END 时重复上报一次全文
         AtomicBoolean streamed = new AtomicBoolean();
         tell(activity, id, definition.name(), task, SubagentActivity.Kind.STARTED, task);
         child.subscribe(event -> {
@@ -195,6 +272,7 @@ public final class SubagentRunner {
                 if (assistant.getText() != null) {
                     text.append(assistant.getText());
                 }
+                // 如果底层 Streamer 直接返回完整消息而没有发过 MESSAGE_UPDATE 增量，则在 MESSAGE_END 补发一次 TEXT 活动
                 if (!streamed.get() && assistant.getText() != null && !assistant.getText().isBlank()) {
                     tell(activity, id, definition.name(), task, SubagentActivity.Kind.TEXT, assistant.getText());
                 }
@@ -234,6 +312,9 @@ public final class SubagentRunner {
         return result;
     }
 
+    /**
+     * 安全地向外部监听器发送子代理活动事件，吞掉展示层可能抛出的运行时异常以免中断子代理主流程。
+     */
     private static void tell(Consumer<SubagentActivity> activity,
                              String id,
                              String agent,
@@ -250,6 +331,13 @@ public final class SubagentRunner {
         }
     }
 
+    /**
+     * 根据子代理定义的工具白名单从父工具列表中筛选可用工具，并始终剔除 {@code subagent} 工具本身。
+     *
+     * @param tools 父代理全量工具
+     * @param allow 允许的工具名称白名单（为 {@code null} 时表示除 {@code subagent} 外全部放行）
+     * @return 子代理最终可用的工具列表
+     */
     private static List<AgentTool> select(List<AgentTool> tools, List<String> allow) {
         Set<String> names = allow == null ? null : new HashSet<>(allow);
         List<AgentTool> selected = new ArrayList<>();
@@ -267,6 +355,9 @@ public final class SubagentRunner {
         return List.copyOf(selected);
     }
 
+    /**
+     * 按名称查找子代理定义，不存在或名称为空时抛出带可用角色提示的 {@link IllegalArgumentException}。
+     */
     private static SubagentDefinition require(List<SubagentDefinition> agents, String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("子代理名称不能为空。可用: " + names(agents));
@@ -280,6 +371,9 @@ public final class SubagentRunner {
         throw new IllegalArgumentException("未知子代理: " + wanted + "。可用: " + names(agents));
     }
 
+    /**
+     * 将所有可用子代理的名称与描述格式化为人类可读的错误提示列表。
+     */
     private static String names(List<SubagentDefinition> agents) {
         List<String> names = new ArrayList<>();
         for (SubagentDefinition agent : agents) {
@@ -288,11 +382,17 @@ public final class SubagentRunner {
         return String.join("；", names);
     }
 
+    /**
+     * 组装子代理的完整系统提示词：在角色专属提示词前加上通用边界约束。
+     */
     private static String prompt(SubagentDefinition definition) {
         return "你是子代理 " + definition.name() + "。只完成交给你的任务，用最终结果回复，不要再派生子代理。\n\n"
                 + definition.systemPrompt();
     }
 
+    /**
+     * 将多任务（并行或链式）中的单步结果格式化为带序号、角色名与任务摘要标题的 Markdown 章节。
+     */
     private static String section(int index, String agent, String task, String body) {
         String title = task == null ? "" : task.strip();
         int newline = title.indexOf('\n');
@@ -309,6 +409,9 @@ public final class SubagentRunner {
         return heading + "\n" + body;
     }
 
+    /**
+     * 规范化并截断子代理输出文本：空白输出替换为占位说明，超长输出截断至 {@link #MAX_CHARS}。
+     */
     private static String cap(String text) {
         if (text == null || text.isBlank()) {
             return "（子代理没有文本结果）";
@@ -319,6 +422,9 @@ public final class SubagentRunner {
         return text.substring(0, MAX_CHARS) + "\n…（结果已截断）";
     }
 
+    /**
+     * 提取异常的可读信息，若异常 message 为空则回退到异常类名。
+     */
     private static String message(Throwable throwable) {
         String text = throwable.getMessage();
         return text == null || text.isBlank() ? throwable.getClass().getSimpleName() : text;

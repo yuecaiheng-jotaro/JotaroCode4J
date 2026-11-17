@@ -10,11 +10,18 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * 斜杠命令的前缀补全。{@code /mo} 只给出 {@code /model}；{@code /model de} 再按模型名继续匹配。
- * 普通文本不参与补全，避免在写任务时被命令打断。
+ * TUI 终端斜杠命令与模型名称补全器。
+ * <p>
+ * 补全规则：
+ * <ul>
+ *   <li>仅当第 0 个词以 {@code /} 开头时提供斜杠命令前缀补全（如输入 {@code /mo} 补全为 {@code /model}），普通文本输入不触发补全，避免干扰正常对话输入。</li>
+ *   <li>当第一个词已经是 {@code /model} 且光标进入参数位置（{@code wordIndex > 0}）时，按前缀匹配已配置的可用模型列表。</li>
+ *   <li>所有 {@link Candidate} 的 {@code complete} 标志均设为 {@code false}，以便交给 {@link SingleColumnLineReader} 控制后缀空格与菜单回车行为，不在选定时被 JLine 自动多追加一个尾随空格。</li>
+ * </ul>
  */
 final class SlashCommandCompleter implements Completer {
 
+    /** 内置支持的全部斜杠命令定义列表（{@code /model} 带一个空格后缀以引导继续选择模型参数）。 */
     static final List<Command> COMMANDS = List.of(
             new Command("/help", "显示命令", null),
             new Command("/exit", "退出", null),
@@ -24,20 +31,26 @@ final class SlashCommandCompleter implements Completer {
             new Command("/model", "查看或切换模型", " ")
     );
 
+    /** 动态提供当前可用模型名称集合的回调。 */
     private final Supplier<? extends Collection<String>> models;
 
     SlashCommandCompleter(Supplier<? extends Collection<String>> models) {
         this.models = models;
     }
 
+    /**
+     * 根据当前解析行生成斜杠命令或模型参数的补全候选列表。
+     */
     @Override
     public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
         List<String> words = line.words();
+        // 处于 /model 命令后的参数位时，补全可用模型名
         if (!words.isEmpty() && "/model".equals(words.get(0)) && line.wordIndex() > 0) {
             addPrefixMatches(candidates, models.get(), line.word(), null);
             return;
         }
         String word = line.word();
+        // 非首个词或未以 / 开头时，不提供任何补全
         if (line.wordIndex() != 0 || !word.startsWith("/")) {
             return;
         }
@@ -49,6 +62,9 @@ final class SlashCommandCompleter implements Completer {
         }
     }
 
+    /**
+     * 从给定字符串集合中筛选匹配指定前缀的条目，排序后加入候选列表。
+     */
     private static void addPrefixMatches(List<Candidate> candidates, Collection<String> values, String prefix, String suffix) {
         if (values == null) {
             return;
@@ -59,6 +75,13 @@ final class SlashCommandCompleter implements Completer {
                 .forEach(value -> candidates.add(new Candidate(value, value, null, null, suffix, null, false)));
     }
 
+    /**
+     * 单条内置斜杠命令元数据。
+     *
+     * @param name        命令名（含前导 {@code /}）
+     * @param description 命令简短说明（显示在候选列表右侧）
+     * @param suffix      选定该命令后自动追加的后缀（如 {@code /model} 的空格）
+     */
     record Command(String name, String description, String suffix) {
     }
 }

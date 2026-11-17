@@ -13,10 +13,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-/** 列目录。目录名以 {@code /} 结尾，包含点文件，默认最多 500 条，并跳过 gitignore 命中的项。 */
+/**
+ * 目录列表查看工具（{@code ls}）。
+ *
+ * <p>列出指定目录下的直接子项（包含以 {@code .} 开头的隐藏文件），按名称不区分大小写排序。
+ * 子目录名称末尾附加 {@code /} 后缀；默认最多返回 500 个条目或 50KB 输出。
+ */
 @Component
 public class LsTool implements ToolContributor {
 
+    /** 默认最大返回的目录项数量。 */
     private static final int DEFAULT_LIMIT = 500;
 
     @Override
@@ -24,6 +30,13 @@ public class LsTool implements ToolContributor {
         return "List";
     }
 
+    /**
+     * 列出指定目录的直接子文件和子目录。
+     *
+     * @param path  目标目录路径（可选，默认为当前工作目录）
+     * @param limit 最大返回条目数（可选，默认 500）
+     * @return 按字母排序的目录内容列表，空目录返回 {@code "(empty directory)"}
+     */
     @org.springframework.ai.tool.annotation.Tool(
             name = "ls",
             description = "List directory contents. Returns entries sorted alphabetically, with '/' suffix for directories. "

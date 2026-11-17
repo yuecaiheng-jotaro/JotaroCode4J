@@ -5,10 +5,14 @@ import lombok.Data;
 
 import java.util.List;
 
-/** {@code models} 是下拉框选项，{@code model} 是配置里的默认项。 */
+/**
+ * 可用模型列表查询接口（{@code GET /api/models}）的返回数据。
+ */
 @Data
 @Builder
 public class ModelListResponse {
+    /** 已配置有效 API Key 的可用模型名称列表（供前端下拉框渲染）。 */
     private List<String> models;
+    /** 当前默认选中的模型名称。 */
     private String model;
 }

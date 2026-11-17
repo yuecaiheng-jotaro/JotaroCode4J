@@ -19,24 +19,36 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 调用智谱 Web Search 接口。连接失败或异常时返回可读说明，不把异常抛进循环。
+ * 智谱 Web Search 联网搜索客户端。
+ *
+ * <p>优先使用 {@code jotaro.web-search.api-key} 配置，未配置时回退复用 {@code spring.ai.zhipuai.api-key}。
+ * 请求失败或解析异常时返回可读说明文本，不向工具调用主循环抛出未捕获异常。
  */
 @Component
 public class WebSearchClient {
 
+    /** 配置文件中默认的占位符 Key，用于识别未配置状态。 */
     private static final String PLACEHOLDER_KEY = "your-api-key";
 
+    /** Agent 全局配置属性。 */
     @Resource
     private JotaroAgentProperties properties;
+    /** JSON 响应解析器。 */
     @Resource
     private ObjectMapper objectMapper;
 
+    /** 智谱 AI 全局 API Key，当未单独配置联网搜索 Key 时作为回退。 */
     @Value("${spring.ai.zhipuai.api-key:}")
     private String zhipuApiKey;
 
+    /** HTTP 客户端实例。 */
     private RestClient client;
+    /** 联网搜索接口地址，默认使用智谱 PaaS v4 web_search 接口。 */
     private String url = "https://open.bigmodel.cn/api/paas/v4/web_search";
 
+    /**
+     * 初始化 HTTP 客户端，若有自定义搜索 URL 配置则覆盖默认地址。
+     */
     @PostConstruct
     void init() {
         if (client != null) {
@@ -49,6 +61,9 @@ public class WebSearchClient {
         client = RestClient.builder().baseUrl(url).build();
     }
 
+    /**
+     * 供单元测试或外部手动绑定依赖使用。
+     */
     public void bind(RestClient client, ObjectMapper objectMapper, JotaroAgentProperties properties, String zhipuApiKey) {
         this.client = client;
         this.objectMapper = objectMapper;
@@ -60,6 +75,14 @@ public class WebSearchClient {
         }
     }
 
+    /**
+     * 调用联网搜索接口并将搜索结果格式化为纯文本摘要。
+     *
+     * @param query  搜索关键词
+     * @param count  期望返回的结果条数（限制在 1~20 之间，为 null 时取配置默认值）
+     * @param domain 可选的域名过滤条件（只搜索指定站点）
+     * @return 格式化后的搜索结果列表或错误说明
+     */
     public String search(String query, Integer count, String domain) {
         if (query == null || query.isBlank()) {
             return "搜索关键词不能为空。";
@@ -73,6 +96,7 @@ public class WebSearchClient {
                 : new JotaroAgentProperties.WebSearch();
         String engine = StringUtils.hasText(config.getEngine()) ? config.getEngine().trim() : "search_std";
         int defaultCount = config.getCount() > 0 ? config.getCount() : 5;
+        // 约束单次返回条数在 [1, 20] 区间内
         int resolvedCount = count == null ? defaultCount : Math.max(1, Math.min(20, count));
 
         Map<String, Object> requestBody = new LinkedHashMap<>();
@@ -100,6 +124,9 @@ public class WebSearchClient {
         }
     }
 
+    /**
+     * 解析智谱搜索返回的 JSON，将每条结果拼装为“序号 + 标题 + (链接, 来源媒体, 发布时间) + 摘要”的格式。
+     */
     String format(JsonNode body) {
         if (body != null && body.hasNonNull("error")) {
             JsonNode error = body.get("error");
@@ -128,6 +155,7 @@ public class WebSearchClient {
             String content = item.path("content").asText("").strip();
 
             builder.append('[').append(index++).append("] ").append(title);
+            // 按顺序拼接非空的元数据字段（链接、媒体名、发布日期）
             if (!link.isEmpty() || !publishDate.isEmpty() || !media.isEmpty()) {
                 builder.append(" (");
                 boolean hasMeta = false;
@@ -157,10 +185,16 @@ public class WebSearchClient {
         return builder.toString();
     }
 
+    /**
+     * 判断联网搜索是否已配置可用 API Key。
+     */
     public boolean enabled() {
         return StringUtils.hasText(resolveApiKey());
     }
 
+    /**
+     * 解析实际生效的 API Key：优先取 {@code jotaro.web-search.api-key}，其次回退至 {@code spring.ai.zhipuai.api-key}。
+     */
     private String resolveApiKey() {
         if (properties != null && properties.getWebSearch() != null) {
             String configured = properties.getWebSearch().getApiKey();

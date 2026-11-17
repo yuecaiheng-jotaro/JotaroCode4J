@@ -9,12 +9,16 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * 执行 PowerShell。优先 {@code pwsh}，没有再用 {@code powershell}。
- * 命令前加一行把控制台输出改成 UTF-8，避免中文乱码。
+ * PowerShell 命令执行工具（{@code powershell}）。
+ *
+ * <p>在系统环境变量 {@code PATH} 中按优先级查找 {@code pwsh}、{@code powershell} 或 {@code powershell.exe}。
+ * 执行前会自动注入一行将控制台输出编码切换为 UTF-8 的前置指令，避免在 Windows 中文环境下出现标准输出乱码。
+ * 属于需要用户交互确认的高风险工具。
  */
 @Component
 public class PowerShellTool implements ToolContributor {
 
+    /** 强制将 PowerShell 控制台输出编码设为 UTF-8 的前置脚本片段。 */
     private static final String UTF8_PREFIX =
             "try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}\n";
 
@@ -23,11 +27,21 @@ public class PowerShellTool implements ToolContributor {
         return "PowerShell";
     }
 
+    /**
+     * 执行外部命令属于高风险操作，需用户在终端确认。
+     */
     @Override
     public boolean requiresConfirmation() {
         return true;
     }
 
+    /**
+     * 在当前工作目录下执行指定的 PowerShell 命令。
+     *
+     * @param command 待执行的 PowerShell 命令文本
+     * @param timeout 超时时间（单位：秒，可选，默认 120 秒）
+     * @return 标准输出与标准错误合并后的文本（超出上限时执行尾部截断并保留完整临时日志文件）
+     */
     @org.springframework.ai.tool.annotation.Tool(
             name = "powershell",
             description = "Execute a PowerShell command in the current working directory. Returns stdout and stderr. "
@@ -54,6 +68,9 @@ public class PowerShellTool implements ToolContributor {
         );
     }
 
+    /**
+     * 从 {@code PATH} 环境变量中按 {@code pwsh -> powershell -> powershell.exe} 的顺序查找可执行文件。
+     */
     private static String resolveExecutable() {
         String path = System.getenv("PATH");
         if (path == null) {

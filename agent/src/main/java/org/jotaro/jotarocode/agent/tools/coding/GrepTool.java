@@ -17,12 +17,20 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * 在文件内容里搜索。命中行格式是 {@code file:line: text}，上下文行用 {@code file-line- text}。
- * 单行超过 500 字符会截断。默认最多 100 条。
+ * 文件内容搜索工具（{@code grep}）。
+ *
+ * <p>核心功能与边界处理：
+ * <ul>
+ *   <li>支持正则表达式或纯文本字面量（{@code literal = true}）搜索，支持忽略大小写（{@code ignoreCase = true}）和 Glob 文件名过滤。</li>
+ *   <li>输出格式：命中行使用 {@code file:line: text}，前后上下文行使用 {@code file-line- text}，并确保相邻命中区间的上下文行不重复输出。</li>
+ *   <li>二进制跳过：读取文件前 512 字节探测是否含 {@code \0} 字节，自动跳过二进制文件、符号链接及被 {@link GitIgnore} 忽略的路径。</li>
+ *   <li>三重截断保护：单行超过 {@link ToolOutput#GREP_MAX_LINE_LENGTH}（500 字符）截断、命中数默认最多 100 条、总输出最多 50KB。</li>
+ * </ul>
  */
 @Component
 public class GrepTool implements ToolContributor {
 
+    /** 默认最大返回命中条数。 */
     private static final int DEFAULT_LIMIT = 100;
 
     @Override
@@ -30,6 +38,18 @@ public class GrepTool implements ToolContributor {
         return "Grep";
     }
 
+    /**
+     * 在指定目录或单个文件中搜索匹配模式的内容行。
+     *
+     * @param pattern    正则表达式或字面量搜索串
+     * @param path       要搜索的目录或文件路径（默认当前工作目录）
+     * @param glob       可选的文件路径 Glob 过滤模式
+     * @param ignoreCase 是否忽略大小写（默认 {@code false}）
+     * @param literal    是否将 {@code pattern} 当作普通字面量而非正则处理（默认 {@code false}）
+     * @param context    每处命中前后展示的上下文行数（默认 0，上限 100）
+     * @param limit      最大返回命中次数（默认 100）
+     * @return 格式化后的匹配行与上下文行，附加截断说明
+     */
     @org.springframework.ai.tool.annotation.Tool(
             name = "grep",
             description = "Search file contents for a pattern. Returns matching lines with file paths and line numbers. "
@@ -117,16 +137,24 @@ public class GrepTool implements ToolContributor {
         return output;
     }
 
+    /**
+     * 单次 Grep 搜索过程的有状态扫描器。
+     */
     private static final class Search {
         private final Path root;
         private final Pattern pattern;
         private final String glob;
         private final int limit;
         private final int context;
+        /** 已收集的格式化输出行列表。 */
         private final List<String> lines = new ArrayList<>();
+        /** 已命中的核心匹配行数（不含上下文行）。 */
         private int matchCount;
+        /** 是否已证实除已返回的 {@code limit} 条外仍存在更多匹配项。 */
         private boolean provedMore;
+        /** 是否存在因超过 500 字符而被截断的单行。 */
         private boolean linesTruncated;
+        /** 是否已完成全部所需扫描，可提前终止文件树遍历。 */
         private boolean done;
 
         private Search(Path root, Pattern pattern, String glob, int limit, int context) {
@@ -137,10 +165,14 @@ public class GrepTool implements ToolContributor {
             this.context = context;
         }
 
+        /**
+         * 扫描单个文本文件，维护前文环形缓冲（{@code before}）与后文剩余计数（{@code trailing}）以输出上下文。
+         */
         private void scan(Path file, boolean relativeToRoot) {
             if (done || !Files.isRegularFile(file) || isBinary(file) || !globMatches(file, relativeToRoot)) {
                 return;
             }
+            // 若前序文件已凑够 limit 条命中，只需探测当前文件是否还有第 limit+1 条命中以设置 provedMore
             if (matchCount >= limit) {
                 if (containsMatch(file)) {
                     provedMore = true;
@@ -160,6 +192,7 @@ public class GrepTool implements ToolContributor {
                     boolean match = pattern.matcher(line).find();
                     if (!limitReached) {
                         if (match) {
+                            // 先补齐该命中行之前尚未输出过的上文行
                             int contextStart = Math.max(1, lineNumber - context);
                             for (Pending pending : before) {
                                 if (pending.number >= contextStart && pending.number > lastEmitted) {
@@ -175,11 +208,13 @@ public class GrepTool implements ToolContributor {
                                 limitReached = true;
                             }
                         } else if (trailing > 0 && lineNumber > lastEmitted) {
+                            // 输出上一处命中行之后的下文行
                             emit(file, relativeToRoot, lineNumber, line, false);
                             lastEmitted = lineNumber;
                             trailing--;
                         }
                     } else if (trailing > 0 && lineNumber > lastEmitted) {
+                        // 已达命中上限，但最后一条命中的下文还没输出完，继续补齐下文
                         emit(file, relativeToRoot, lineNumber, line, false);
                         lastEmitted = lineNumber;
                         trailing--;
@@ -191,6 +226,7 @@ public class GrepTool implements ToolContributor {
                         done = true;
                         return;
                     }
+                    // 维护固定长度为 context 的滑动窗口以备后续命中输出上文
                     if (context > 0) {
                         before.add(new Pending(lineNumber, line));
                         if (before.size() > context) {
@@ -210,6 +246,9 @@ public class GrepTool implements ToolContributor {
             }
         }
 
+        /**
+         * 将单行格式化后加入输出列表，超过 500 字符时截断。
+         */
         private void emit(Path file, boolean relativeToRoot, int lineNumber, String text, boolean match) {
             String shown = text;
             if (shown.length() > ToolOutput.GREP_MAX_LINE_LENGTH) {
@@ -222,6 +261,7 @@ public class GrepTool implements ToolContributor {
                     : display + "-" + lineNumber + "- " + shown);
         }
 
+        /** 检查文件路径是否符合 {@code glob} 过滤条件。 */
         private boolean globMatches(Path file, boolean relativeToRoot) {
             if (glob == null || glob.isBlank()) {
                 return true;
@@ -232,6 +272,7 @@ public class GrepTool implements ToolContributor {
             return GlobPatterns.matchesFilter(glob, relative);
         }
 
+        /** 快速判断文件中是否包含至少一处正则匹配。 */
         private boolean containsMatch(Path file) {
             try (BufferedReader reader = Files.newBufferedReader(file)) {
                 String line;
@@ -246,6 +287,9 @@ public class GrepTool implements ToolContributor {
             }
         }
 
+        /**
+         * 读取文件开头最多 512 字节，若存在 NUL（{@code 0x00}）字节则判定为二进制文件。
+         */
         private static boolean isBinary(Path file) {
             try (InputStream input = Files.newInputStream(file)) {
                 byte[] probe = input.readNBytes(512);
@@ -261,6 +305,7 @@ public class GrepTool implements ToolContributor {
         }
     }
 
+    /** 暂存的待输出上文行。 */
     private record Pending(int number, String text) {
     }
 }
