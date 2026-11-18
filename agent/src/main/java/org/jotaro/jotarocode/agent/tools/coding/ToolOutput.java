@@ -14,14 +14,14 @@ import java.util.Locale;
  *   <li><b>尾部截断（{@link #tail}）</b>：从最后一行向前保留最多 {@link #MAX_LINES}（2000 行）或 {@link #MAX_BYTES}（50KB），适用于 Shell 命令输出（通常报错堆栈和最终汇总在末尾）。</li>
  * </ul>
  */
-final class ToolOutput {
+public final class ToolOutput {
 
     /** 单次工具输出默认允许的最大行数（2000 行）。 */
-    static final int MAX_LINES = 2000;
+    public static final int MAX_LINES = 2000;
     /** 单次工具输出默认允许的最大 UTF-8 字节数（50KB）。 */
-    static final int MAX_BYTES = 50 * 1024;
+    public static final int MAX_BYTES = 50 * 1024;
     /** {@code grep} 工具单行展示的最大字符长度（500 字符）。 */
-    static final int GREP_MAX_LINE_LENGTH = 500;
+    public static final int GREP_MAX_LINE_LENGTH = 500;
 
     private ToolOutput() {
     }
@@ -34,20 +34,20 @@ final class ToolOutput {
      * @param firstLineExceedsLimit 是否因为第一行本身就超过 {@code maxBytes} 导致一行都无法保留
      * @param outputLines           实际保留的输出行数
      */
-    record Truncation(String content, boolean truncated, boolean firstLineExceedsLimit, int outputLines) {
+    public record Truncation(String content, boolean truncated, boolean firstLineExceedsLimit, int outputLines) {
     }
 
     /**
      * 按默认上限（2000 行 / 50KB）执行头部截断。
      */
-    static Truncation head(String content) {
+    public static Truncation head(String content) {
         return head(content, MAX_LINES, MAX_BYTES);
     }
 
     /**
      * 从文本开头逐行累加，直到达到 {@code maxLines} 或 {@code maxBytes} 上限为止。
      */
-    static Truncation head(String content, int maxLines, int maxBytes) {
+    public static Truncation head(String content, int maxLines, int maxBytes) {
         List<String> lines = linesOf(content);
         if (lines.isEmpty()) {
             return new Truncation("", false, false, 0);
@@ -71,14 +71,14 @@ final class ToolOutput {
     /**
      * 按默认上限（2000 行 / 50KB）执行尾部截断。
      */
-    static Truncation tail(String content) {
+    public static Truncation tail(String content) {
         return tail(content, MAX_LINES, MAX_BYTES);
     }
 
     /**
      * 从文本末尾倒序逐行累加，保留最后不超过 {@code maxLines} 且不超过 {@code maxBytes} 的行。
      */
-    static Truncation tail(String content, int maxLines, int maxBytes) {
+    public static Truncation tail(String content, int maxLines, int maxBytes) {
         List<String> lines = linesOf(content);
         if (lines.isEmpty()) {
             return new Truncation("", false, false, 0);
@@ -101,7 +101,7 @@ final class ToolOutput {
     /**
      * 将字节数格式化为人类可读的单位（{@code B}、{@code KB} 或 {@code MB}）。
      */
-    static String formatSize(int bytes) {
+    public static String formatSize(int bytes) {
         if (bytes < 1024) {
             return bytes + "B";
         }

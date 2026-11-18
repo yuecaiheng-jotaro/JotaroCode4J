@@ -19,7 +19,7 @@ public final class McpToolNames {
     static {
         BUILTIN.addAll(Set.of(
                 "read", "write", "edit", "bash", "powershell", "ls", "grep", "find",
-                "currentTime", "terminate", "subagent", "rag", "webSearch"
+                "currentTime", "terminate", "subagent", "rag", "webSearch", "sqlite"
         ));
     }
 

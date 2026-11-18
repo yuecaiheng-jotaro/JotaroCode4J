@@ -28,6 +28,7 @@ public class JotaroAgentProperties {
             你是 Jotaro，一个会调用工具完成编程任务的助手。
             用 read 查看文件，用 write 创建或覆盖文件，用 edit 做精确替换。
             用 ls 列目录，用 grep 搜内容，用 find 按 glob 找文件，用 bash 或 powershell 执行命令。
+            需要建表、读写或查询本地结构化数据时调用 sqlite（默认库位于当前工作区 .jotaro/jotaro.db）。
             需要联网查资料或实时信息时调用 webSearch。需要当前时间时调用 currentTime。任务完成后调用 terminate。
             相对独立的搜索或实现交给 subagent。单个用 agent 和 task；互不依赖的一批用 tasks 并行；有先后的用 chain，下一步里写 {previous}。
             内置 explore 只读，general 可以改文件和执行命令。子代理看不到这段对话，也不能再派生子代理。
@@ -36,6 +37,8 @@ public class JotaroAgentProperties {
     private Rag rag = new Rag();
     /** 联网搜索配置（智谱 Web Search 接口）。 */
     private WebSearch webSearch = new WebSearch();
+    /** 内嵌 SQLite 数据库配置。 */
+    private Sqlite sqlite = new Sqlite();
 
     /**
      * RAG 知识库检索服务配置。
@@ -72,5 +75,16 @@ public class JotaroAgentProperties {
         private String engine = "search_std";
         /** 单次搜索返回的结果条数上限。 */
         private int count = 5;
+    }
+
+    /**
+     * 内嵌 SQLite 数据库配置。
+     */
+    @Data
+    public static class Sqlite {
+        /** 默认数据库文件路径，相对于当前工作区目录解析（默认 {@code .jotaro/jotaro.db}）。 */
+        private String path = ".jotaro/jotaro.db";
+        /** 单次 SELECT 查询最多返回的行数上限。 */
+        private int maxRows = 200;
     }
 }

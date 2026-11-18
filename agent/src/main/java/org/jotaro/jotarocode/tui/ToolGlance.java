@@ -43,7 +43,7 @@ public final class ToolGlance {
      */
     static String call(String name, String arguments) {
         String label = label(name);
-        String extra = first(arguments, "command", "path", "file_path", "pattern", "query", "glob");
+        String extra = first(arguments, "command", "path", "file_path", "pattern", "query", "sql", "glob");
         if (extra.isEmpty() && "subagent".equals(name)) {
             String agent = first(arguments, "agent");
             String task = first(arguments, "task");
@@ -98,6 +98,7 @@ public final class ToolGlance {
             case "subagent" -> "Agent";
             case "rag" -> "Rag";
             case "webSearch" -> "Search";
+            case "sqlite" -> "SQLite";
             default -> name;
         };
     }

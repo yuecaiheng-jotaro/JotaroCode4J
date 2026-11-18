@@ -6,3 +6,7 @@ agent/src/main/resources/application-local.yaml
 .cursor
 agent/target
 rag/target
+.jotaro/*.db
+.jotaro/*.db-journal
+.jotaro/*.db-wal
+.jotaro/*.db-shm
