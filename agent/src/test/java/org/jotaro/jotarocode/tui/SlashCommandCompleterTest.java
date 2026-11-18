@@ -19,7 +19,7 @@ class SlashCommandCompleterTest {
 
     @Test
     void completesCommandsByPrefix() {
-        assertEquals(List.of("/help", "/exit", "/quit", "/abort", "/reset", "/model"), values("/"));
+        assertEquals(List.of("/help", "/exit", "/quit", "/abort", "/reset", "/compact", "/model"), values("/"));
         assertEquals(List.of("/model"), values("/mo"));
         assertEquals(List.of("/exit"), values("/e"));
         assertEquals(List.of(), values("读一下"));

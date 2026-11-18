@@ -209,22 +209,36 @@ public final class AgentLoop {
     }
 
     /**
-     * 计算发给大模型的滑动窗口消息列表。
+     * 计算发给大模型的上下文消息列表；当当前上下文 Token 数超过所选大模型支持的最大上下文的 80%（{@code triggerThreshold}）时，
+     * 启动 {@code compact} 子代理按配置比例（默认 70%）浓缩当前上下文。
      *
      * <p>边界条件处理：
      * <ol>
-     *   <li>若 {@code modelWindow <= 0} 或当前消息总数未超过窗口大小，直接返回全量消息副本。</li>
-     *   <li>为什么不能在 {@link ToolResponseMessage} 处截断：OpenAI / DeepSeek / Qwen 等聊天协议严格要求
-     *       {@code role=tool} 的消息前面必须紧跟发起该调用的 {@code role=assistant (tool_calls)} 消息。
-     *       如果滑动窗口起点 {@code start} 恰好落在 {@code ToolResponseMessage} 上，直接截断会导致孤立的 ToolResponse 报错，
-     *       因此这里将 {@code start} 向前退到非 {@code ToolResponseMessage}（即对应的 {@code AssistantMessage}）为止。</li>
-     *   <li>若裁剪后丢弃了索引 0，而索引 0 是 {@link SystemMessage}，则将其单独补回窗口首位，保证系统提示词永不丢失。</li>
+     *   <li>若配置了启用状态的 {@link ContextCompactor}：每次请求模型前先调用 {@link ContextCompactor#shouldCompact(List, String)}
+     *       判断当前估算 Token 数是否已达到或超过所选模型最大上下文窗口的 {@code 0.8}（默认 80%）。
+     *       若达到阈值，则立即派生 {@code compact} 子代理将前 {@code ratio}（默认 70%）的历史消息浓缩为结构化摘要，
+     *       替换循环内列表并通过 {@code onMessagesCompacted} 同步回宿主 {@code JotaroAgent}。</li>
+     *   <li>若未配置 {@link ContextCompactor}（如纯单元测试场景）：回退按 {@code modelWindow} 条数滑动裁剪，
+     *       同时保证不拆散 {@code AssistantMessage(toolCalls)} 与 {@link ToolResponseMessage} 配对，并保留首条 {@link SystemMessage}。</li>
      * </ol>
-     * todo 做上下文压缩
      *
-     * @return 裁剪后发给模型的消息列表
+     * @return 压缩/裁剪后发给模型的消息列表
      */
     private List<Message> visibleMessages() {
+        ContextCompactor compactor = request.getCompactor();
+        if (compactor != null && compactor.enabled()) {
+            if (compactor.shouldCompact(messages, request.getModel())) {
+                ContextCompactor.Result result = compactor.compact(messages, request.getStreamer(), control);
+                if (result.compacted()) {
+                    messages.clear();
+                    messages.addAll(result.messages());
+                    if (request.getOnMessagesCompacted() != null) {
+                        request.getOnMessagesCompacted().accept(result.messages());
+                    }
+                }
+            }
+            return List.copyOf(messages);
+        }
         int window = request.getModelWindow();
         if (window <= 0 || messages.size() <= window) {
             return List.copyOf(messages);

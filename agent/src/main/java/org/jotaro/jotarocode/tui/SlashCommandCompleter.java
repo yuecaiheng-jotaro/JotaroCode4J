@@ -28,6 +28,7 @@ final class SlashCommandCompleter implements Completer {
             new Command("/quit", "退出", null),
             new Command("/abort", "取消当前运行", null),
             new Command("/reset", "清空当前会话", null),
+            new Command("/compact", "子代理压缩上下文（默认 70%）", null),
             new Command("/model", "查看或切换模型", " ")
     );
 

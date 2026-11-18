@@ -7,6 +7,7 @@ import org.jotaro.jotarocode.agent.runtime.AgentLoopRequest;
 import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.AssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.BeforeToolCallResult;
+import org.jotaro.jotarocode.agent.runtime.ContextCompactor;
 import org.jotaro.jotarocode.agent.runtime.PendingMessageQueue;
 import org.jotaro.jotarocode.agent.runtime.RunControl;
 import org.jotaro.jotarocode.agent.runtime.SubagentActivity;
@@ -71,6 +72,11 @@ public class JotaroAgent {
      * 同一轮中含有多个工具调用时的默认执行模式（顺序或并行）。
      */
     private final ToolExecutionMode toolExecution;
+
+    /**
+     * 上下文压缩器（负责启动压缩子代理按比例浓缩历史消息，默认压缩前 70%）。
+     */
+    private final ContextCompactor compactor;
 
     /**
      * 完整的会话消息历史（包含 SystemMessage、UserMessage、AssistantMessage、ToolResponseMessage）。
@@ -179,6 +185,29 @@ public class JotaroAgent {
                    int messageWindow,
                    ToolExecutionMode toolExecution,
                    RunControl sharedControl) {
+        this(systemPrompt, tools, streamer, maxSteps, messageWindow, toolExecution, sharedControl, new ContextCompactor());
+    }
+
+    /**
+     * 创建会话 Agent，支持注入自定义 {@link ContextCompactor}（为 {@code null} 时不启用子代理压缩）。
+     *
+     * @param systemPrompt  系统提示词
+     * @param tools         可用工具列表
+     * @param streamer      模型流式调用器
+     * @param maxSteps      最大循环步数
+     * @param messageWindow 发给模型的消息窗口大小
+     * @param toolExecution 工具默认执行模式（为空时默认并行）
+     * @param sharedControl 共享的取消开关（顶层 Agent 传 {@code null}，子代理传父代理的 {@code RunControl}）
+     * @param compactor     上下文压缩器
+     */
+    public JotaroAgent(String systemPrompt,
+                   List<AgentTool> tools,
+                   AssistantStreamer streamer,
+                   int maxSteps,
+                   int messageWindow,
+                   ToolExecutionMode toolExecution,
+                   RunControl sharedControl,
+                   ContextCompactor compactor) {
         this.systemPrompt = systemPrompt;
         this.tools = List.copyOf(tools == null ? List.of() : tools);
         this.streamer = streamer;
@@ -186,6 +215,7 @@ public class JotaroAgent {
         this.messageWindow = messageWindow;
         this.toolExecution = toolExecution == null ? ToolExecutionMode.PARALLEL : toolExecution;
         this.sharedControl = sharedControl;
+        this.compactor = compactor;
         if (StringUtils.hasText(systemPrompt)) {
             messages.add(new SystemMessage(systemPrompt));
         }
@@ -367,6 +397,59 @@ public class JotaroAgent {
     }
 
     /**
+     * 使用默认配置的压缩比例（默认 70%）手动触发子代理上下文压缩。
+     */
+    public ContextCompactor.Result compact() {
+        return compact(null);
+    }
+
+    /**
+     * 手动启动压缩子代理，将当前会话前 {@code customRatio}（为空时使用配置的默认比例 70%）的历史对话压缩为摘要。
+     *
+     * @param customRatio 自定义压缩比例（支持 0.1~0.95 或 10~95；为 {@code null} 时使用默认配置比例）
+     * @return 压缩统计与结果
+     * @throws IllegalStateException 如果当前 Agent 正在运行中
+     */
+    public ContextCompactor.Result compact(Double customRatio) {
+        List<Message> snapshot;
+        AssistantStreamer currentStreamer;
+        RunControl control;
+        synchronized (runLock) {
+            if (running) {
+                throw new IllegalStateException("Agent 正在运行，不能执行上下文压缩");
+            }
+            snapshot = new ArrayList<>(messages);
+            currentStreamer = this.streamer;
+            control = new RunControl();
+            this.runControl = control;
+            this.running = true;
+            this.state = AgentState.THINKING;
+        }
+        ContextCompactor activeCompactor = this.compactor != null ? this.compactor : new ContextCompactor();
+        double targetRatio = customRatio == null ? activeCompactor.ratio() : ContextCompactor.normalizeRatio(customRatio);
+        try {
+            return SubagentScope.call(new SubagentScope.Context(model, beforeToolCall, subagentActivity), () -> {
+                ContextCompactor.Result result = activeCompactor.compact(snapshot, currentStreamer, control, targetRatio);
+                if (result.compacted()) {
+                    synchronized (runLock) {
+                        messages.clear();
+                        messages.addAll(result.messages());
+                    }
+                }
+                return result;
+            });
+        } finally {
+            Thread.interrupted();
+            synchronized (runLock) {
+                running = false;
+                if (state != AgentState.ERROR) {
+                    state = AgentState.FINISHED;
+                }
+            }
+        }
+    }
+
+    /**
      * 在绑定了 {@link SubagentScope} 上下文（包含当前模型名、工具前置确认钩子、子代理活动回调）的作用域内执行主循环。
      * 这样当循环内部调用 {@code subagent} 工具时，子代理能够通过线程局部变量获取到父代理的上下文。
      */
@@ -396,6 +479,14 @@ public class JotaroAgent {
                     .followUpMessages(followUpQueue::drain)
                     .control(control)
                     .beforeToolCall(beforeToolCall)
+                    .model(model)
+                    .compactor(compactor)
+                    .onMessagesCompacted(compacted -> {
+                        synchronized (runLock) {
+                            messages.clear();
+                            messages.addAll(compacted);
+                        }
+                    })
                     .build(), this::dispatch).run();
         } catch (RuntimeException e) {
             state = AgentState.ERROR;

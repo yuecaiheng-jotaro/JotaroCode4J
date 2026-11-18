@@ -3,6 +3,7 @@ package org.jotaro.jotarocode.tui;
 import org.jotaro.jotarocode.agent.JotaroAgent;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
+import org.jotaro.jotarocode.agent.runtime.ContextCompactor;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.SubagentActivity;
 import org.jotaro.jotarocode.config.ChatClientRegistry;
@@ -331,11 +332,64 @@ public final class JotaroAgentTui {
             }
             return;
         }
+        if (line.equals("/compact") || line.startsWith("/compact ")) {
+            compactContext(reader, line.substring("/compact".length()).trim());
+            return;
+        }
         if (line.equals("/model") || line.startsWith("/model ")) {
             switchModel(reader, line.substring("/model".length()).trim());
             return;
         }
         printLines(reader, List.of("未知命令: " + line));
+    }
+
+    /**
+     * 处理 {@code /compact [比例]} 命令：启动压缩子代理将历史对话按比例（默认 70%）浓缩为摘要。
+     */
+    private void compactContext(LineReader reader, String ratioArg) {
+        if (agent.isRunning()) {
+            printLines(reader, List.of("Agent 正在运行，请等待当前轮结束后再执行 /compact"));
+            return;
+        }
+        Double customRatio = null;
+        if (!ratioArg.isEmpty()) {
+            try {
+                customRatio = ContextCompactor.parseRatio(ratioArg, ContextCompactor.DEFAULT_RATIO);
+            } catch (IllegalArgumentException exception) {
+                printLines(reader, List.of(exception.getMessage()));
+                return;
+            }
+        }
+        final Double ratioToUse = customRatio;
+        showingRun = true;
+        activity = "正在压缩上下文";
+        executor.submit(() -> {
+            runThread = Thread.currentThread();
+            try {
+                ContextCompactor.Result result = agent.compact(ratioToUse);
+                int percent = (int) Math.round(result.ratio() * 100);
+                if (result.compacted()) {
+                    printLines(reader, List.of("上下文压缩完成（比例 " + percent + "%）：已将前 "
+                            + result.compactedCount() + " 条消息浓缩为摘要（消息 "
+                            + result.beforeTotal() + " -> " + result.afterTotal()
+                            + "，Token " + result.beforeTokens() + " -> " + result.afterTokens() + "）"));
+                } else {
+                    printLines(reader, List.of("当前对话消息较少，无需压缩"));
+                }
+            } catch (RuntimeException exception) {
+                printLines(reader, List.of("上下文压缩失败: " + exception.getMessage()));
+            } finally {
+                Thread.interrupted();
+                if (runThread == Thread.currentThread()) {
+                    runThread = null;
+                }
+                synchronized (screen) {
+                    showingRun = false;
+                    activity = "正在回复";
+                    paint(List.of());
+                }
+            }
+        });
     }
 
     /**

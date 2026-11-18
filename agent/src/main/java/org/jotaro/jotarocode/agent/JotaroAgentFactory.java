@@ -3,6 +3,7 @@ package org.jotaro.jotarocode.agent;
 import org.jotaro.jotarocode.agent.rag.RagBases;
 import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.CallbackAgentTool;
+import org.jotaro.jotarocode.agent.runtime.ContextCompactor;
 import org.jotaro.jotarocode.agent.runtime.SpringAiAssistantStreamer;
 import org.jotaro.jotarocode.agent.runtime.ToolExecutionMode;
 import org.jotaro.jotarocode.agent.tools.SubagentTool;
@@ -142,13 +143,21 @@ public class JotaroAgentFactory {
             resolvedPrompt = resolvedPrompt + "\n\n" + bases;
         }
         SpringAiAssistantStreamer streamer = streamerFor(resolvedModel);
+        ContextCompactor compactor = new ContextCompactor(
+                properties.getCompactRatio(),
+                properties.getCompactThreshold(),
+                properties.getDefaultContextTokens(),
+                properties.getModelContextLimits()
+        );
         JotaroAgent agent = new JotaroAgent(
                 resolvedPrompt,
                 tools,
                 streamer,
                 properties.getMaxSteps(),
                 properties.getMessageWindow(),
-                ToolExecutionMode.PARALLEL
+                ToolExecutionMode.PARALLEL,
+                null,
+                compactor
         );
         agent.useModel(resolvedModel, streamer);
         return agent;

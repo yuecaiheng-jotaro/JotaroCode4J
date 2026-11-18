@@ -6,6 +6,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -48,6 +49,12 @@ public class AgentLoopRequest {
     Function<AfterToolCallContext, AfterToolCallResult> afterToolCall;
     /** 单轮（Turn）结束钩子（可覆盖循环是否继续或立即结束的决策）。 */
     Function<TurnContext, TurnDecision> finishTurn;
+    /** 当前会话选中的大模型名称（用于查询该模型支持的最大上下文窗口 Token 数）。 */
+    String model;
+    /** 可选的上下文压缩器：当当前上下文超过所选大模型最大上下文的 0.8 时，启动子代理按配置比例（默认 70%）压缩上下文。 */
+    ContextCompactor compactor;
+    /** 当循环内部触发了上下文压缩时的回调，用于将压缩后的消息列表同步回外层 {@code JotaroAgent}。 */
+    Consumer<List<Message>> onMessagesCompacted;
 
     /**
      * 传给 {@link #beforeToolCall} 钩子的上下文信息。

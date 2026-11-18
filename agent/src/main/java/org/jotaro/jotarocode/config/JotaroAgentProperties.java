@@ -4,7 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@code application.yaml} 中 {@code jotaro.*} 配置项的属性绑定类。
@@ -23,6 +25,29 @@ public class JotaroAgentProperties {
     private int maxSteps = 20;
     /** 发往大模型的上下文滑动窗口消息条数上限。 */
     private int messageWindow = 40;
+    /**
+     * 触发自动上下文压缩的水位阈值（默认 0.8，即当当前上下文 Token 数超过所选大模型支持的最大上下文的 80% 时，自动触发子代理压缩）。
+     */
+    private double compactThreshold = 0.8;
+    /**
+     * 上下文压缩比例（默认 0.7，即 70%）。
+     * 当触发压缩时，启动压缩子代理将前 70% 的历史消息浓缩为摘要，保留最近 30% 的原始消息。
+     * 支持填 0~1 小数（如 0.7）或 1~100 百分比（如 70）。
+     */
+    private double compactRatio = 0.7;
+    /**
+     * 未单独配置最大上下文窗口时的模型默认最大 Token 数（默认 64000）。
+     */
+    private int defaultContextTokens = 64_000;
+    /**
+     * 各大模型支持的最大上下文窗口大小（单位：Token）。
+     * 当当前上下文估算 Token 数超过 {@code modelContextLimits.get(model) * compactThreshold}（默认 0.8）时自动触发压缩。
+     */
+    private Map<String, Integer> modelContextLimits = new LinkedHashMap<>(Map.of(
+            "deepseek-chat", 64_000,
+            "glm-4.6", 128_000,
+            "qwen4-max-preview", 128_000
+    ));
     /** 默认系统提示词，指导模型如何使用文件读写、命令执行、联网搜索、子代理等内置工具。 */
     private String systemPrompt = """
             你是 Jotaro，一个会调用工具完成编程任务的助手。
