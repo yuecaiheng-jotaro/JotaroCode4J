@@ -13,9 +13,10 @@ Jotaro 是用 Java 和 Spring AI 实现的 Pi 风格编程助手。它能读写�
 ![Java 17+](https://img.shields.io/badge/Java-17%2B-ED8B00?style=flat-square)
 ![Spring Boot 3.5](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?style=flat-square)
 ![Spring AI 1.1](https://img.shields.io/badge/Spring_AI-1.1-6DB33F?style=flat-square)
+![Redis + SQLite](https://img.shields.io/badge/Redis_%2B_SQLite-Context_%26_Local_DB-DC382D?style=flat-square)
 ![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square)
 
-[快速开始](#快速开始) · [一键打包与启动](#一键打包与启动) · [终端体验](#终端体验) · [知识库](#知识库) · [架构设计](#架构设计) · [数据流转](#数据流转) · [工具和扩展](#工具和扩展) · [HTTP API](#http-api)
+[快速开始](#快速开始) · [一键打包与启动](#一键打包与启动) · [终端体验](#终端体验) · [上下文管理](#上下文管理) · [工具和扩展](#工具和扩展) · [知识库](#知识库) · [架构设计](#架构设计) · [HTTP API](#http-api)
 
 </div>
 
@@ -125,11 +126,27 @@ java -jar /路径/jotaro-agent-0.0.1-SNAPSHOT.jar         # 网页模式（127.0
 | --- | --- |
 | 斜杠命令选择 | 输入 `/` 自动高亮选中首项 `● /help`，上下方向键切换，回车确认，Esc 或 Ctrl+C 收起并恢复原输入 |
 | 模型切换 | 输入 `/model` 回车，自动定位并选中当前模型（`● <当前模型>`），上下键切换其他已配置模型，回车立即切换 |
-| 停止、重置、退出 | `/abort` 中止当前运行、`/reset` 清空会话、`/exit` 或 `/quit`（或 Ctrl+D / Ctrl+Z）退出 |
+| 上下文管理命令 | `/context` 查看当前 Token 水位、Redis 存储与裁剪/压缩统计；`/goal <目标>` 锚定长任务目标；`/compact [比例]` 手动触发子代理压缩（默认 70%） |
+| 停止、重置、退出 | `/abort` 中止当前运行、`/reset` 清空会话与 Redis 事件日志、`/exit` 或 `/quit`（或 Ctrl+D / Ctrl+Z）退出 |
 | 历史与补全 | 普通文本按上下方向键回溯历史消息；Tab 触发补全，右方向键或 Ctrl+E 接受灰色内联建议 |
 | 粘贴文本与图片 | 粘贴超过 5 行或 800 字自动收折为 `[Pasted text #1 +N lines]`，发送时展开全文；Ctrl+V 支持直接从剪贴板粘贴图片 |
 
 终端在执行写操作或命令工具（`bash`、`powershell`、`write`、`edit` 及 MCP 工具）前会弹出确认框：输入 `y` 允许本次，`a` 本次会话全部允许，`n` 拒绝；输入其他文字会阻止本次调用并将文字作为提示反馈给模型。
+
+## 上下文管理
+
+参考 **DeepSeek Harness** 的上下文架构，Jotaro 将「**不可变事件日志（Event Log）**」与「**发往模型的动态派生视图（`ContextPipeline`）**」彻底分离：
+
+1. **Redis 不可变事件日志**（[RedisContextStore](agent/src/main/java/org/jotaro/jotarocode/agent/context/RedisContextStore.java)）：
+   - 默认连接本地 Redis（`127.0.0.1:6379`），按 `jotaro:ctx:<sessionId>:events` 将每条系统提示、用户消息、助手回复、工具结果、任务目标与压缩检查点以不可变 JSON 事件追加写入（默认 TTL 24 小时）。
+   - 若本地未启动 Redis，会自动无感降级为进程内存存储，不影响正常使用。
+2. **动态派生与旧工具输出裁剪**（[ContextPipeline](agent/src/main/java/org/jotaro/jotarocode/agent/context/ContextPipeline.java)）：
+   - 每次请求模型前从最新 `COMPACTION` 检查点回放活跃事件，并将 `/goal` 设置的核心任务目标自动锚定在 `SystemMessage` 末尾。
+   - **Tool Result Pruner**：完整保留最近 4 轮工具输出，对更早轮次超过 800 字符的超大工具输出在模型视图中折叠为占位提示（Redis 原始日志保持完整不丢失）。
+3. **0.8 模型水位自动子代理压缩**（[ContextCompactor](agent/src/main/java/org/jotaro/jotarocode/agent/runtime/ContextCompactor.java)）：
+   - 自动根据当前选中模型支持的最大上下文窗口（如 `deepseek-chat` 64K、`glm-4.6` / `qwen4-max-preview` 128K）估算当前上下文 Token 数。
+   - 当达到所选模型最大上下文的 **0.8（80%）** 时，自动派生无工具的 `compact` 子代理将前 **70%**（`jotaro.compact-ratio` 可配置）的历史消息浓缩成结构化摘要，向 Redis 追加 `COMPACTION` 检查点并保留最近 30% 的原始消息（严格保护 `ToolCall` / `ToolResponse` 成对不断裂）。
+4. **实时上下文洞察**：在 TUI 输入 `/context` 或调用 `GET /api/sessions/{id}/context` 可随时查看存储后端、Token 水位百分比、裁剪次数、压缩次数与当前任务目标。
 
 ## 工具和扩展
 
@@ -138,6 +155,7 @@ java -jar /路径/jotaro-agent-0.0.1-SNAPSHOT.jar         # 网页模式（127.0
 | `read`、`ls`、`grep`、`find` | 读文件（支持文本与图片）、列目录、正则搜内容、按 glob 找文件。后三项自动遵守 `.gitignore` |
 | `write`、`edit` | 整文件创建/覆盖、精确替换。同一文件的并发变更通过锁串行化，每段 `oldText` 需唯一且互不重叠 |
 | `bash`、`powershell` | 在当前工作目录执行命令。默认超时 120 秒，PowerShell 优先使用 `pwsh` |
+| `sqlite` | 内嵌 SQLite 数据库工具（默认库位于当前工作区 `.jotaro/jotaro.db`），支持建表、增删改查及 `.tables` / `.schema` 元信息查看 |
 | `webSearch` | 调用智谱 Web Search 接口检索实时网页、技术文档与外部资讯，支持条数 `count` 和域名过滤 `domain` |
 | `subagent` | 委派独立子任务（支持单任务、并行 `tasks`、链式 `chain`） |
 | `rag` | 从独立知识库服务检索文档片段（配置了 `jotaro.rag.bases` 时启用） |
@@ -267,8 +285,10 @@ Agent 侧通过 `jotaro.rag.base-url` 和 `jotaro.rag.bases` 控制知识库访�
 | `POST /api/sessions/{id}/messages` | 提交消息 `{"content":"..."}` |
 | `POST /api/sessions/{id}/queue` | 运行中追加消息 `{"content":"...","kind":"STEER"}`（或 `FOLLOW_UP`） |
 | `POST /api/sessions/{id}/abort` | 中止当前运行 |
-| `POST /api/sessions/{id}/reset` | 清空会话历史（需处于空闲状态） |
+| `POST /api/sessions/{id}/reset` | 清空会话历史与事件日志（需处于空闲状态） |
 | `POST /api/sessions/{id}/model` | 切换模型 `{"model":"glm-4.6"}`（需处于空闲状态） |
+| `GET /api/sessions/{id}/context` | 获取上下文洞察快照（存储介质、Token 水位、裁剪与压缩统计、目标锚点） |
+| `POST /api/sessions/{id}/compact` | 手动触发子代理压缩（可选查询参数 `?ratio=0.7`） |
 
 ### RAG（默认 `8090`）
 
@@ -285,8 +305,10 @@ Agent 侧通过 `jotaro.rag.base-url` 和 `jotaro.rag.bases` 控制知识库访�
 
 | 模块/目录 | 代码入口 |
 | --- | --- |
-| 模型调用、工具调度、事件循环 | [agent/runtime](agent/src/main/java/org/jotaro/jotarocode/agent/runtime) |
+| 模型调用、工具调度、事件循环与子代理压缩 | [agent/runtime](agent/src/main/java/org/jotaro/jotarocode/agent/runtime) |
+| 上下文管理（Redis 事件日志 + 动态派生） | [agent/context](agent/src/main/java/org/jotaro/jotarocode/agent/context) |
 | 文件与命令工具 | [agent/tools/coding](agent/src/main/java/org/jotaro/jotarocode/agent/tools/coding) |
+| 内嵌 SQLite 客户端与工具 | [agent/sqlite](agent/src/main/java/org/jotaro/jotarocode/agent/sqlite)、[SqliteTool](agent/src/main/java/org/jotaro/jotarocode/agent/tools/SqliteTool.java) |
 | 联网搜索客户端与工具 | [agent/search](agent/src/main/java/org/jotaro/jotarocode/agent/search)、[WebSearchTool](agent/src/main/java/org/jotaro/jotarocode/agent/tools/WebSearchTool.java) |
 | 供应商密钥检测与模型注册表 | [ProviderApiKeys](agent/src/main/java/org/jotaro/jotarocode/config/ProviderApiKeys.java)、[ChatClientRegistry](agent/src/main/java/org/jotaro/jotarocode/config/ChatClientRegistry.java) |
 | 终端 TUI 交互与行读取器 | [tui](agent/src/main/java/org/jotaro/jotarocode/tui) |
@@ -309,8 +331,14 @@ mvn test                                                         # 运行全量�
 | `jotaro.mode` | `server` | 运行模式：`server`（Web 网页）或 `tui`（终端交互，`--tui` 会自动覆盖为 `tui`） |
 | `jotaro.model` | `deepseek-chat` | 默认模型；若对应厂家未配 Key 会自动回退到首个可用模型 |
 | `jotaro.max-steps` | `20` | 单次运行允许的最大助手消息轮数 |
-| `jotaro.message-window` | `40` | 发给模型的最近消息条数窗口 |
-| `jotaro.system-prompt` | 见属性类 | 基础系统提示词，创建会话时自动拼入技能目录与可用知识库说明 |
+| `jotaro.compact-threshold` | `0.8` | 触发自动上下文压缩的 Token 水位比例（达到所选模型最大上下文的 80% 时触发） |
+| `jotaro.compact-ratio` | `0.7` | 触发压缩时由 `compact` 子代理浓缩的历史消息比例（默认 70%，支持写 `0.7` 或 `70`） |
+| `jotaro.model-context-limits` | 见配置 | 各模型支持的最大上下文 Token 数（如 `deepseek-chat: 64000`、`glm-4.6: 128000`） |
+| `jotaro.context.redis-enabled` | `true` | 是否启用本地 Redis 持久化上下文事件日志（Redis 不可用时自动降级为内存） |
+| `jotaro.context.keep-recent-tool-turns` | `4` | 动态派生上下文时完整保留最近多少轮工具输出，更早轮次超大输出自动裁剪 |
+| `jotaro.context.tool-prune-chars` | `800` | 较早轮次单条工具输出超过该字符数时在派生视图中折叠裁剪 |
+| `jotaro.sqlite.path` | `.jotaro/jotaro.db` | 内嵌 SQLite 默认数据库路径（相对当前工作目录，首次调用自动创建） |
+| `jotaro.sqlite.max-rows` | `200` | 单次 SQLite `SELECT` 查询最多返回的行数上限 |
 | `jotaro.web-search.url` | `https://open.bigmodel.cn/api/paas/v4/web_search` | 智谱联网搜索接口地址 |
 | `jotaro.web-search.api-key` | 空（自动复用 `spring.ai.zhipuai.api-key`） | 联网搜索密钥；均未配置时自动隐藏 `webSearch` 工具 |
 | `jotaro.web-search.engine` | `search_std` | 搜索引擎类型（如 `search_std`、`search_pro`） |
