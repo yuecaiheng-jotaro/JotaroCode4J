@@ -1,0 +1,19 @@
+.gitignore
+  s_e3a737b2410f96::t_8cf2872f477850 9-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "5e260334d63dbe476f8563ecfcaa5970485f60ce",
+  "prompts": {},
+  "sessions": {
+    "s_e3a737b2410f96": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "19be4902-5135-45d5-bc7d-d751a7966109",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
