@@ -225,6 +225,15 @@ public final class AgentLoop {
      * @return 压缩/裁剪后发给模型的消息列表
      */
     private List<Message> visibleMessages() {
+        if (request.getContextManager() != null) {
+            int beforeCompactions = request.getContextManager().inspect(request.getModel()).compactionCount();
+            List<Message> derived = request.getContextManager().deriveForModel(request.getModel(), request.getStreamer(), control);
+            int afterCompactions = request.getContextManager().inspect(request.getModel()).compactionCount();
+            if (afterCompactions > beforeCompactions && request.getOnMessagesCompacted() != null) {
+                request.getOnMessagesCompacted().accept(derived);
+            }
+            return derived;
+        }
         ContextCompactor compactor = request.getCompactor();
         if (compactor != null && compactor.enabled()) {
             if (compactor.shouldCompact(messages, request.getModel())) {

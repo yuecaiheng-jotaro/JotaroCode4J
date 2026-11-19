@@ -64,6 +64,8 @@ public class JotaroAgentProperties {
     private WebSearch webSearch = new WebSearch();
     /** 内嵌 SQLite 数据库配置。 */
     private Sqlite sqlite = new Sqlite();
+    /** 上下文管理配置（Redis 事件日志 + 工具输出裁剪）。 */
+    private Context context = new Context();
 
     /**
      * RAG 知识库检索服务配置。
@@ -111,5 +113,24 @@ public class JotaroAgentProperties {
         private String path = ".jotaro/jotaro.db";
         /** 单次 SELECT 查询最多返回的行数上限。 */
         private int maxRows = 200;
+    }
+
+    /**
+     * 上下文管理配置（参考 DeepSeek Harness：Redis 持久化事件日志 + 旧工具输出裁剪）。
+     */
+    @Data
+    public static class Context {
+        /** 是否启用 Redis 持久化上下文事件日志（本地 Redis 不可用时自动降级为内存，不报错）。 */
+        private boolean redisEnabled = true;
+        /** Redis Key 前缀。 */
+        private String keyPrefix = "jotaro:ctx:";
+        /** Redis 会话事件日志过期时间（小时）。 */
+        private int ttlHours = 24;
+        /** 是否在派生模型上下文时裁剪较早轮次的超大工具输出（不影响 Redis 中的原始日志）。 */
+        private boolean pruneOldToolOutputs = true;
+        /** 完整保留最近多少个工具调用轮次的原始输出不裁剪。 */
+        private int keepRecentToolTurns = 4;
+        /** 较早轮次单条工具输出超过该字符数时触发视图裁剪。 */
+        private int toolPruneChars = 800;
     }
 }

@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.service;
 
+import org.jotaro.jotarocode.agent.context.ContextManager;
 import org.jotaro.jotarocode.event.PromptEvent;
 import org.jotaro.jotarocode.model.request.CreateSessionRequest;
 import org.jotaro.jotarocode.model.request.QueueRequest;
@@ -60,6 +61,12 @@ public interface AgentSessionService {
      * @param model     目标模型名称
      */
     void switchModel(String sessionId, String model);
+
+    /** 查看指定会话的上下文水位与压缩状态。 */
+    ContextManager.ContextSnapshot inspectContext(String sessionId);
+
+    /** 手动触发指定会话的子代理上下文压缩。 */
+    ContextManager.ContextSnapshot compact(String sessionId, Double ratio);
 
     /**
      * 获取所有已启用（配置了有效 API Key）的模型名称列表。

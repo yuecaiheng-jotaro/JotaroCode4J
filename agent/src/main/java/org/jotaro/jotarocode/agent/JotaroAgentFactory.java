@@ -1,5 +1,8 @@
 package org.jotaro.jotarocode.agent;
 
+import org.jotaro.jotarocode.agent.context.ContextManager;
+import org.jotaro.jotarocode.agent.context.ContextPipeline;
+import org.jotaro.jotarocode.agent.context.ContextStore;
 import org.jotaro.jotarocode.agent.rag.RagBases;
 import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.CallbackAgentTool;
@@ -67,6 +70,8 @@ public class JotaroAgentFactory {
     /** MCP 客户端工具目录，负责发现并拉取已连接 MCP Server 的工具回调。 */
     @Resource
     private McpToolCatalog mcpToolCatalog;
+    @Resource
+    private ContextStore contextStore;
 
     /** 仅包含本地内置 {@link ToolContributor} 适配出的工具列表。 */
     private List<AgentTool> localTools = List.of();
@@ -149,6 +154,15 @@ public class JotaroAgentFactory {
                 properties.getDefaultContextTokens(),
                 properties.getModelContextLimits()
         );
+        JotaroAgentProperties.Context ctxProps = properties.getContext();
+        ContextPipeline.Options pipelineOptions = ctxProps == null
+                ? ContextPipeline.Options.defaults()
+                : new ContextPipeline.Options(
+                        ctxProps.isPruneOldToolOutputs(),
+                        ctxProps.getKeepRecentToolTurns(),
+                        ctxProps.getToolPruneChars()
+                );
+        ContextManager contextManager = new ContextManager(null, contextStore, compactor, pipelineOptions);
         JotaroAgent agent = new JotaroAgent(
                 resolvedPrompt,
                 tools,
@@ -157,7 +171,7 @@ public class JotaroAgentFactory {
                 properties.getMessageWindow(),
                 ToolExecutionMode.PARALLEL,
                 null,
-                compactor
+                contextManager
         );
         agent.useModel(resolvedModel, streamer);
         return agent;

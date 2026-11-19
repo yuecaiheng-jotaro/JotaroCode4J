@@ -28,6 +28,8 @@ final class SlashCommandCompleter implements Completer {
             new Command("/quit", "退出", null),
             new Command("/abort", "取消当前运行", null),
             new Command("/reset", "清空当前会话", null),
+            new Command("/context", "查看上下文水位、Redis 存储与压缩状态", null),
+            new Command("/goal", "锚定当前任务目标（防止长对话偏航）", " "),
             new Command("/compact", "子代理压缩上下文（默认 70%）", null),
             new Command("/model", "查看或切换模型", " ")
     );

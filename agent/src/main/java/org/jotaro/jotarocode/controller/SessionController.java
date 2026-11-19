@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.controller;
 
+import org.jotaro.jotarocode.agent.context.ContextManager;
 import org.jotaro.jotarocode.model.common.ApiResponse;
 import org.jotaro.jotarocode.model.request.CreateSessionRequest;
 import org.jotaro.jotarocode.model.request.PromptRequest;
@@ -142,5 +143,17 @@ public class SessionController {
     public ApiResponse<Void> switchModel(@PathVariable String sessionId, @RequestBody CreateSessionRequest request) {
         agentSessionService.switchModel(sessionId, request == null ? null : request.getModel());
         return ApiResponse.success();
+    }
+
+    @GetMapping("/sessions/{sessionId}/context")
+    public ApiResponse<ContextManager.ContextSnapshot> context(@PathVariable String sessionId) {
+        return ApiResponse.success(agentSessionService.inspectContext(sessionId));
+    }
+
+    @PostMapping("/sessions/{sessionId}/compact")
+    public ApiResponse<ContextManager.ContextSnapshot> compact(
+            @PathVariable String sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Double ratio) {
+        return ApiResponse.success(agentSessionService.compact(sessionId, ratio));
     }
 }

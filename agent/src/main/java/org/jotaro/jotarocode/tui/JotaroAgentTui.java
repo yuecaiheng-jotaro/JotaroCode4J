@@ -1,6 +1,7 @@
 package org.jotaro.jotarocode.tui;
 
 import org.jotaro.jotarocode.agent.JotaroAgent;
+import org.jotaro.jotarocode.agent.context.ContextManager;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.ContextCompactor;
@@ -332,6 +333,14 @@ public final class JotaroAgentTui {
             }
             return;
         }
+        if ("/context".equals(line)) {
+            showContextInsight(reader);
+            return;
+        }
+        if (line.equals("/goal") || line.startsWith("/goal ")) {
+            updateGoal(reader, line.substring("/goal".length()).trim());
+            return;
+        }
         if (line.equals("/compact") || line.startsWith("/compact ")) {
             compactContext(reader, line.substring("/compact".length()).trim());
             return;
@@ -341,6 +350,44 @@ public final class JotaroAgentTui {
             return;
         }
         printLines(reader, List.of("未知命令: " + line));
+    }
+
+    /**
+     * 处理 {@code /context} 命令：展示当前上下文水位、Redis/内存存储状态、旧工具裁剪数、压缩次数及目标锚点。
+     */
+    private void showContextInsight(LineReader reader) {
+        ContextManager.ContextSnapshot snap = agent.inspectContext();
+        int triggerPct = (int) Math.round(snap.triggerThreshold() * 100);
+        int compactPct = (int) Math.round(snap.compactRatio() * 100);
+        String usage = String.format(java.util.Locale.US, "%.1f%%", snap.usagePercent());
+        List<String> lines = new java.util.ArrayList<>();
+        lines.add("╭ 上下文洞察 (" + snap.storage().toUpperCase(java.util.Locale.ROOT) + ")");
+        lines.add("│ 会话 ID    : " + snap.sessionId());
+        lines.add("│ 当前模型   : " + (snap.model().isEmpty() ? model : snap.model()));
+        lines.add("│ Token 水位 : " + snap.estimatedTokens() + " / " + snap.modelContextLimit()
+                + " (" + usage + "，达到 " + triggerPct + "% 自动压缩 " + compactPct + "%)");
+        lines.add("│ 事件与消息 : 原始事件 " + snap.rawEventCount() + " 条 → 活跃消息 " + snap.activeMessageCount() + " 条");
+        lines.add("│ 优化统计   : 已裁剪旧工具输出 " + snap.prunedToolOutputs() + " 处 · 已执行子代理压缩 " + snap.compactionCount() + " 次");
+        if (snap.goal() != null && !snap.goal().isBlank()) {
+            lines.add("│ 任务目标   : " + snap.goal());
+        }
+        lines.add("╰ 提示: /compact [比例] 手动压缩 · /goal <目标> 锚定长任务目标");
+        printLines(reader, lines);
+    }
+
+    /**
+     * 处理 {@code /goal <目标>} 命令：锚定当前会话的任务目标，写入事件日志并在后续派生上下文时自动置顶。
+     */
+    private void updateGoal(LineReader reader, String goal) {
+        if (goal.isEmpty()) {
+            String current = agent.inspectContext().goal();
+            printLines(reader, List.of(current == null || current.isBlank()
+                    ? "当前未设置任务目标。用法: /goal <你的核心目标>"
+                    : "当前任务目标: " + current));
+            return;
+        }
+        agent.setGoal(goal);
+        printLines(reader, List.of("已锚定任务目标: " + goal));
     }
 
     /**

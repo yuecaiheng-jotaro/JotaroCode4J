@@ -2,6 +2,7 @@ package org.jotaro.jotarocode.agent.runtime;
 
 import lombok.Builder;
 import lombok.Value;
+import org.jotaro.jotarocode.agent.context.ContextManager;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 
@@ -51,7 +52,9 @@ public class AgentLoopRequest {
     Function<TurnContext, TurnDecision> finishTurn;
     /** 当前会话选中的大模型名称（用于查询该模型支持的最大上下文窗口 Token 数）。 */
     String model;
-    /** 可选的上下文压缩器：当当前上下文超过所选大模型最大上下文的 0.8 时，启动子代理按配置比例（默认 70%）压缩上下文。 */
+    /** 会话上下文管理器（负责从 Redis 事件日志动态派生上下文、裁剪旧工具输出及 0.8 水位子代理压缩）。 */
+    ContextManager contextManager;
+    /** 可选的上下文压缩器：当未传入 {@link #contextManager} 时作为轻量压缩兜底。 */
     ContextCompactor compactor;
     /** 当循环内部触发了上下文压缩时的回调，用于将压缩后的消息列表同步回外层 {@code JotaroAgent}。 */
     Consumer<List<Message>> onMessagesCompacted;

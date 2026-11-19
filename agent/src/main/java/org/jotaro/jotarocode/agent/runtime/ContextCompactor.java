@@ -343,7 +343,7 @@ public final class ContextCompactor {
                 10,
                 ToolExecutionMode.SEQUENTIAL,
                 effectiveControl,
-                null
+                (ContextCompactor) null
         );
 
         SubagentScope.Context scope = SubagentScope.current();

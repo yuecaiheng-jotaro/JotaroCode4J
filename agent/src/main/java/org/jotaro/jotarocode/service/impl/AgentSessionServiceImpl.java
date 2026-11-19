@@ -2,6 +2,7 @@ package org.jotaro.jotarocode.service.impl;
 
 import org.jotaro.jotarocode.agent.JotaroAgent;
 import org.jotaro.jotarocode.agent.JotaroAgentFactory;
+import org.jotaro.jotarocode.agent.context.ContextManager;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.event.PromptEvent;
@@ -136,6 +137,22 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     @Override
     public void switchModel(String sessionId, String model) {
         jotaroAgentFactory.switchModel(require(sessionId), model);
+    }
+
+    @Override
+    public ContextManager.ContextSnapshot inspectContext(String sessionId) {
+        return require(sessionId).inspectContext();
+    }
+
+    @Override
+    public ContextManager.ContextSnapshot compact(String sessionId, Double ratio) {
+        JotaroAgent agent = require(sessionId);
+        try {
+            agent.compact(ratio);
+            return agent.inspectContext();
+        } catch (IllegalStateException exception) {
+            throw new BizException(exception.getMessage());
+        }
     }
 
     /**

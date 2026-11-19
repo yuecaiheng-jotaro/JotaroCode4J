@@ -1,5 +1,9 @@
 package org.jotaro.jotarocode.agent;
 
+import org.jotaro.jotarocode.agent.context.ContextManager;
+import org.jotaro.jotarocode.agent.context.ContextPipeline;
+import org.jotaro.jotarocode.agent.context.ContextStore;
+import org.jotaro.jotarocode.agent.context.InMemoryContextStore;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.AgentLoop;
@@ -77,6 +81,11 @@ public class JotaroAgent {
      * 上下文压缩器（负责启动压缩子代理按比例浓缩历史消息，默认压缩前 70%）。
      */
     private final ContextCompactor compactor;
+
+    /**
+     * 会话上下文管理器（基于 Redis / 内存事件日志 + 动态派生流水线 + 压缩检查点）。
+     */
+    private final ContextManager contextManager;
 
     /**
      * 完整的会话消息历史（包含 SystemMessage、UserMessage、AssistantMessage、ToolResponseMessage）。
@@ -208,6 +217,21 @@ public class JotaroAgent {
                    ToolExecutionMode toolExecution,
                    RunControl sharedControl,
                    ContextCompactor compactor) {
+        this(systemPrompt, tools, streamer, maxSteps, messageWindow, toolExecution, sharedControl,
+                new ContextManager(null, new InMemoryContextStore(), compactor, ContextPipeline.Options.defaults()));
+    }
+
+    /**
+     * 创建会话 Agent，支持注入自定义 {@link ContextManager}（如由 Redis 持久化的事件日志上下文管理器）。
+     */
+    public JotaroAgent(String systemPrompt,
+                   List<AgentTool> tools,
+                   AssistantStreamer streamer,
+                   int maxSteps,
+                   int messageWindow,
+                   ToolExecutionMode toolExecution,
+                   RunControl sharedControl,
+                   ContextManager contextManager) {
         this.systemPrompt = systemPrompt;
         this.tools = List.copyOf(tools == null ? List.of() : tools);
         this.streamer = streamer;
@@ -215,9 +239,14 @@ public class JotaroAgent {
         this.messageWindow = messageWindow;
         this.toolExecution = toolExecution == null ? ToolExecutionMode.PARALLEL : toolExecution;
         this.sharedControl = sharedControl;
-        this.compactor = compactor;
+        this.contextManager = contextManager != null
+                ? contextManager
+                : new ContextManager(null, new InMemoryContextStore(), new ContextCompactor(), ContextPipeline.Options.defaults());
+        this.compactor = this.contextManager.compactor();
         if (StringUtils.hasText(systemPrompt)) {
-            messages.add(new SystemMessage(systemPrompt));
+            SystemMessage sys = new SystemMessage(systemPrompt);
+            messages.add(sys);
+            this.contextManager.record(sys);
         }
     }
 
@@ -363,6 +392,7 @@ public class JotaroAgent {
             }
             state = AgentState.THINKING;
             messages.add(message);
+            contextManager.record(message);
             runControl = sharedControl != null ? sharedControl : new RunControl();
             running = true;
             return true;
@@ -390,10 +420,25 @@ public class JotaroAgent {
             if (StringUtils.hasText(systemPrompt)) {
                 messages.add(new SystemMessage(systemPrompt));
             }
+            contextManager.reset(systemPrompt);
             steeringQueue.clear();
             followUpQueue.clear();
             state = AgentState.IDLE;
         }
+    }
+
+    /**
+     * 设置或更新当前会话的任务目标（Goal 锚定，持久化到 Redis 事件日志）。
+     */
+    public void setGoal(String goal) {
+        contextManager.setGoal(goal);
+    }
+
+    /**
+     * 获取当前会话的上下文洞察快照（供 TUI {@code /context} 与 Web API 展示）。
+     */
+    public ContextManager.ContextSnapshot inspectContext() {
+        return contextManager.inspect(model);
     }
 
     /**
@@ -404,36 +449,33 @@ public class JotaroAgent {
     }
 
     /**
-     * 手动启动压缩子代理，将当前会话前 {@code customRatio}（为空时使用配置的默认比例 70%）的历史对话压缩为摘要。
+     * 手动启动压缩子代理，将当前会话前 {@code customRatio}（为空时使用配置的默认比例 70%）的历史对话压缩为摘要，
+     * 并在事件日志（Redis）中记录 {@code COMPACTION} 检查点。
      *
      * @param customRatio 自定义压缩比例（支持 0.1~0.95 或 10~95；为 {@code null} 时使用默认配置比例）
      * @return 压缩统计与结果
      * @throws IllegalStateException 如果当前 Agent 正在运行中
      */
     public ContextCompactor.Result compact(Double customRatio) {
-        List<Message> snapshot;
         AssistantStreamer currentStreamer;
         RunControl control;
         synchronized (runLock) {
             if (running) {
                 throw new IllegalStateException("Agent 正在运行，不能执行上下文压缩");
             }
-            snapshot = new ArrayList<>(messages);
             currentStreamer = this.streamer;
             control = new RunControl();
             this.runControl = control;
             this.running = true;
             this.state = AgentState.THINKING;
         }
-        ContextCompactor activeCompactor = this.compactor != null ? this.compactor : new ContextCompactor();
-        double targetRatio = customRatio == null ? activeCompactor.ratio() : ContextCompactor.normalizeRatio(customRatio);
         try {
             return SubagentScope.call(new SubagentScope.Context(model, beforeToolCall, subagentActivity), () -> {
-                ContextCompactor.Result result = activeCompactor.compact(snapshot, currentStreamer, control, targetRatio);
+                ContextCompactor.Result result = contextManager.compact(customRatio, currentStreamer, control);
                 if (result.compacted()) {
                     synchronized (runLock) {
                         messages.clear();
-                        messages.addAll(result.messages());
+                        messages.addAll(contextManager.activeMessages());
                     }
                 }
                 return result;
@@ -480,6 +522,7 @@ public class JotaroAgent {
                     .control(control)
                     .beforeToolCall(beforeToolCall)
                     .model(model)
+                    .contextManager(contextManager)
                     .compactor(compactor)
                     .onMessagesCompacted(compacted -> {
                         synchronized (runLock) {
@@ -511,10 +554,11 @@ public class JotaroAgent {
      * @param event 循环内部发出的事件
      */
     private void dispatch(AgentEvent event) {
-        // 每当一轮中的消息（中途插入的用户消息、助手回复消息、工具结果消息）完成时，追加回主会话历史
+        // 每当一轮中的消息（中途插入的用户消息、助手回复消息、工具结果消息）完成时，追加回主会话历史与持久化事件日志
         if (event.getType() == AgentEventType.MESSAGE_END && event.getMessage() != null) {
             synchronized (runLock) {
                 messages.add(event.getMessage());
+                contextManager.record(event.getMessage());
             }
         }
         // 根据事件类型驱动会话状态机转换
