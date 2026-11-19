@@ -4,6 +4,7 @@ import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.ParsedLine;
+import org.jotaro.jotarocode.agent.context.ContextStore;
 
 import java.util.Collection;
 import java.util.List;
@@ -28,21 +29,31 @@ final class SlashCommandCompleter implements Completer {
             new Command("/quit", "退出", null),
             new Command("/abort", "取消当前运行", null),
             new Command("/reset", "清空当前会话", null),
-            new Command("/context", "查看上下文水位、Redis 存储与压缩状态", null),
+            new Command("/new", "开启新会话（保留当前会话，可用 /resume 恢复）", null),
+            new Command("/context", "查看上下文水位、Redis/SQLite 存储与压缩状态", null),
             new Command("/goal", "锚定当前任务目标（防止长对话偏航）", " "),
             new Command("/compact", "子代理压缩上下文（默认 70%）", null),
+            new Command("/resume", "从 SQLite 恢复历史会话上下文", " "),
             new Command("/model", "查看或切换模型", " ")
     );
 
     /** 动态提供当前可用模型名称集合的回调。 */
     private final Supplier<? extends Collection<String>> models;
+    /** 动态提供 SQLite 中可恢复历史会话列表的回调。 */
+    private final Supplier<List<ContextStore.SessionSummary>> sessions;
 
     SlashCommandCompleter(Supplier<? extends Collection<String>> models) {
+        this(models, List::of);
+    }
+
+    SlashCommandCompleter(Supplier<? extends Collection<String>> models,
+                          Supplier<List<ContextStore.SessionSummary>> sessions) {
         this.models = models;
+        this.sessions = sessions == null ? List::of : sessions;
     }
 
     /**
-     * 根据当前解析行生成斜杠命令或模型参数的补全候选列表。
+     * 根据当前解析行生成斜杠命令、模型名或历史会话参数的补全候选列表。
      */
     @Override
     public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
@@ -50,6 +61,23 @@ final class SlashCommandCompleter implements Completer {
         // 处于 /model 命令后的参数位时，补全可用模型名
         if (!words.isEmpty() && "/model".equals(words.get(0)) && line.wordIndex() > 0) {
             addPrefixMatches(candidates, models.get(), line.word(), null);
+            return;
+        }
+        // 处于 /resume 命令后的参数位时，补全 SQLite 中的历史会话
+        if (!words.isEmpty() && "/resume".equals(words.get(0)) && line.wordIndex() > 0) {
+            String prefix = line.word() == null ? "" : line.word();
+            List<ContextStore.SessionSummary> list = sessions.get();
+            if (list != null) {
+                for (ContextStore.SessionSummary summary : list) {
+                    if (summary.sessionId().startsWith(prefix)) {
+                        String shortId = summary.sessionId().length() > 8
+                                ? summary.sessionId().substring(0, 8)
+                                : summary.sessionId();
+                        String desc = summary.title() + " (" + summary.eventCount() + " 条事件)";
+                        candidates.add(new Candidate(summary.sessionId(), shortId, null, desc, null, null, false));
+                    }
+                }
+            }
             return;
         }
         String word = line.word();

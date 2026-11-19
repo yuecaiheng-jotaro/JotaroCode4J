@@ -1,22 +1,30 @@
 package org.jotaro.jotarocode.agent.context;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jotaro.jotarocode.agent.runtime.AssistantTurn;
 import org.jotaro.jotarocode.agent.runtime.ContextCompactor;
 import org.jotaro.jotarocode.agent.runtime.RunControl;
 import org.jotaro.jotarocode.agent.runtime.StopReason;
+import org.jotaro.jotarocode.config.JotaroAgentProperties;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ContextManagerTest {
+
+    @TempDir
+    Path temp;
 
     @Test
     void prunesOldOversizedToolOutputsWhileKeepingRecentOnesAndPreservingRawLog() {
@@ -92,5 +100,63 @@ class ContextManagerTest {
         assertEquals(1, snapshot.compactionCount());
         assertEquals("重构订单模块并补齐单元测试", snapshot.goal());
         assertEquals(128_000, snapshot.modelContextLimit());
+    }
+
+    @Test
+    void persistsEventsInSqliteAndResumesSessionAcrossRestarts() {
+        JotaroAgentProperties properties = new JotaroAgentProperties();
+        properties.getSqlite().setPath(temp.resolve(".jotaro/jotaro.db").toString());
+
+        SqliteContextStore store1 = new SqliteContextStore();
+        store1.bind(properties, new ObjectMapper());
+
+        ContextManager original = new ContextManager("sess-alpha-1234", store1, new ContextCompactor(0.7), ContextPipeline.Options.defaults());
+        original.record(new SystemMessage("sys"));
+        original.record(new UserMessage("帮我排查一下下单接口超时的原因"));
+        original.record(new AssistantMessage("我先查看一下 OrderController 和下游依赖"));
+
+        // 模拟进程重启后新建 SqliteContextStore 与新的空会话，通过 /resume 按前缀恢复历史上下文
+        SqliteContextStore store2 = new SqliteContextStore();
+        store2.bind(properties, new ObjectMapper());
+
+        List<ContextStore.SessionSummary> sessions = store2.listSessions(10);
+        assertEquals(1, sessions.size());
+        assertEquals("sess-alpha-1234", sessions.get(0).sessionId());
+        assertTrue(sessions.get(0).title().contains("帮我排查一下下单接口超时"));
+
+        ContextManager fresh = new ContextManager("sess-new-9999", store2, new ContextCompactor(0.7), ContextPipeline.Options.defaults());
+        ContextManager.ContextSnapshot resumed = fresh.resume("sess-alpha", "deepseek-chat");
+
+        assertEquals("sess-alpha-1234", resumed.sessionId());
+        assertEquals(3, resumed.rawEventCount());
+        assertEquals(3, resumed.activeMessageCount());
+        assertEquals("帮我排查一下下单接口超时的原因", fresh.activeMessages().get(1).getText());
+
+        // 恢复后继续追加消息，序号连续递增不冲突
+        fresh.record(new UserMessage("继续查一下数据库连接池配置"));
+        assertEquals(4, store2.events("sess-alpha-1234").size());
+        assertEquals(4L, store2.events("sess-alpha-1234").get(3).getSeq());
+    }
+
+    @Test
+    void startNewKeepsPreviousSessionAndBeginsAnEmptyOne() {
+        InMemoryContextStore store = new InMemoryContextStore();
+        ContextManager manager = new ContextManager("sess-old", store, new ContextCompactor(0.7), ContextPipeline.Options.defaults());
+        manager.record(new SystemMessage("sys"));
+        manager.record(new UserMessage("旧会话里的问题"));
+        manager.record(new AssistantMessage("旧会话里的回答"));
+
+        String created = manager.startNew("sys");
+
+        assertNotEquals("sess-old", created);
+        assertEquals(created, manager.sessionId());
+        assertEquals(1, manager.activeMessages().size());
+        assertEquals("sys", manager.activeMessages().get(0).getText());
+        assertEquals(3, store.events("sess-old").size());
+
+        ContextManager.ContextSnapshot resumed = manager.resume("sess-old", "deepseek-chat");
+        assertEquals("sess-old", resumed.sessionId());
+        assertEquals(3, resumed.rawEventCount());
+        assertEquals("旧会话里的问题", manager.activeMessages().get(1).getText());
     }
 }

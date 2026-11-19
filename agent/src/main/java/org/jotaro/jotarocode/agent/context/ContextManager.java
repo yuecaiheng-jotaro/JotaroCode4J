@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class ContextManager {
 
-    private final String sessionId;
+    private volatile String sessionId;
     private final ContextStore store;
     private final ContextCompactor compactor;
     private final ContextPipeline.Options pipelineOptions;
@@ -78,7 +78,7 @@ public final class ContextManager {
     }
 
     /**
-     * 清空会话事件日志并重新写入初始系统提示词。
+     * 清空当前会话事件日志并重新写入初始系统提示词。
      */
     public synchronized void reset(String systemPrompt) {
         store.clear(sessionId);
@@ -86,6 +86,78 @@ public final class ContextManager {
         if (systemPrompt != null && !systemPrompt.isBlank()) {
             record(new SystemMessage(systemPrompt));
         }
+    }
+
+    /**
+     * 开启一个全新会话：当前会话的事件日志原样保留，切换到新的会话 ID 并写入系统提示词。
+     *
+     * @param systemPrompt 新会话的系统提示词
+     * @return 新会话 ID
+     */
+    public synchronized String startNew(String systemPrompt) {
+        this.sessionId = UUID.randomUUID().toString();
+        this.sequence.set(0);
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            record(new SystemMessage(systemPrompt));
+        }
+        return sessionId;
+    }
+
+    /**
+     * 列出存储中可恢复的历史会话列表（按最近活跃时间倒序）。
+     */
+    public List<ContextStore.SessionSummary> listResumableSessions(int limit) {
+        return store.listSessions(limit);
+    }
+
+    /**
+     * 从持久化存储（SQLite / Redis）恢复指定历史会话的完整上下文事件日志。
+     *
+     * @param targetSessionId 目标会话 ID（支持完整 ID 或唯一前缀匹配）
+     * @param model           当前模型名，用于生成恢复后的上下文洞察快照
+     * @return 恢复成功后的上下文洞察快照
+     * @throws IllegalArgumentException 如果找不到对应历史会话
+     */
+    public synchronized ContextSnapshot resume(String targetSessionId, String model) {
+        if (targetSessionId == null || targetSessionId.isBlank()) {
+            throw new IllegalArgumentException("请指定要恢复的会话 ID 或序号。");
+        }
+        String resolvedId = resolveSessionId(targetSessionId.trim());
+        List<ContextEvent> loaded = store.events(resolvedId);
+        if (loaded.isEmpty()) {
+            throw new IllegalArgumentException("未找到可恢复的历史会话: " + targetSessionId);
+        }
+        this.sessionId = resolvedId;
+        long maxSeq = 0L;
+        for (ContextEvent event : loaded) {
+            if (event != null && event.getSeq() > maxSeq) {
+                maxSeq = event.getSeq();
+            }
+        }
+        this.sequence.set(maxSeq);
+        return inspect(model);
+    }
+
+    private String resolveSessionId(String query) {
+        // 先尝试精确匹配
+        if (!store.events(query).isEmpty()) {
+            return query;
+        }
+        // 再尝试前缀匹配（例如用户输入前 8 位 sessionId）
+        List<ContextStore.SessionSummary> recent = store.listSessions(50);
+        List<String> matches = new java.util.ArrayList<>();
+        for (ContextStore.SessionSummary summary : recent) {
+            if (summary.sessionId().startsWith(query)) {
+                matches.add(summary.sessionId());
+            }
+        }
+        if (matches.size() == 1) {
+            return matches.get(0);
+        }
+        if (matches.size() > 1) {
+            throw new IllegalArgumentException("会话 ID 前缀 " + query + " 匹配到多条记录，请多输入几位字符。");
+        }
+        return query;
     }
 
     /**

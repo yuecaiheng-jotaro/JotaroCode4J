@@ -2,6 +2,7 @@ package org.jotaro.jotarocode.tui;
 
 import org.jotaro.jotarocode.agent.JotaroAgent;
 import org.jotaro.jotarocode.agent.context.ContextManager;
+import org.jotaro.jotarocode.agent.context.ContextStore;
 import org.jotaro.jotarocode.agent.runtime.AgentEvent;
 import org.jotaro.jotarocode.agent.runtime.AgentEventType;
 import org.jotaro.jotarocode.agent.runtime.ContextCompactor;
@@ -99,7 +100,10 @@ public final class JotaroAgentTui {
     public void run() throws Exception {
         Terminal terminal = TerminalBuilder.builder().system(true).dumb(true).build();
         reader = new SingleColumnLineReader(terminal, agent::isRunning, () -> this.model);
-        reader.setCompleter(new SlashCommandCompleter(() -> registry.keys().stream().sorted().toList()));
+        reader.setCompleter(new SlashCommandCompleter(
+                () -> registry.keys().stream().sorted().toList(),
+                () -> agent.listResumableSessions(10)
+        ));
         reader.setHistory(new DefaultHistory());
         reader.installInteractionKeys();
         reader.setAutosuggestion(LineReader.SuggestionType.COMPLETER);
@@ -283,7 +287,7 @@ public final class JotaroAgentTui {
     }
 
     /**
-     * 解析并执行本地斜杠命令（{@code /help}、{@code /exit}、{@code /quit}、{@code /abort}、{@code /reset}、{@code /model}）。
+     * 解析并执行本地斜杠命令（{@code /help}、{@code /exit}、{@code /quit}、{@code /abort}、{@code /reset}、{@code /new}、{@code /model}）。
      */
     private void handleCommand(LineReader reader, String line) {
         if ("/help".equals(line)) {
@@ -333,6 +337,21 @@ public final class JotaroAgentTui {
             }
             return;
         }
+        if ("/new".equals(line)) {
+            try {
+                ContextManager.ContextSnapshot snap = agent.startNew();
+                if (questions != null) {
+                    questions.reset();
+                }
+                String shortId = snap.sessionId().length() > 8
+                        ? snap.sessionId().substring(0, 8)
+                        : snap.sessionId();
+                printLines(reader, List.of("已创建新会话 [" + shortId + "]。上一会话已保留，可用 /resume 恢复"));
+            } catch (IllegalStateException exception) {
+                printLines(reader, List.of(exception.getMessage()));
+            }
+            return;
+        }
         if ("/context".equals(line)) {
             showContextInsight(reader);
             return;
@@ -343,6 +362,10 @@ public final class JotaroAgentTui {
         }
         if (line.equals("/compact") || line.startsWith("/compact ")) {
             compactContext(reader, line.substring("/compact".length()).trim());
+            return;
+        }
+        if (line.equals("/resume") || line.startsWith("/resume ")) {
+            resumeSession(reader, line.substring("/resume".length()).trim());
             return;
         }
         if (line.equals("/model") || line.startsWith("/model ")) {
@@ -388,6 +411,56 @@ public final class JotaroAgentTui {
         }
         agent.setGoal(goal);
         printLines(reader, List.of("已锚定任务目标: " + goal));
+    }
+
+    /**
+     * 处理 {@code /resume [序号|会话ID]} 命令：未带参数时列出 SQLite 中最近的历史会话，
+     * 带参数时按序号（1 开始）或会话 ID/前缀恢复对应的完整历史上下文。
+     */
+    private void resumeSession(LineReader reader, String arg) {
+        if (agent.isRunning()) {
+            printLines(reader, List.of("Agent 正在运行，请等待当前轮结束后再执行 /resume"));
+            return;
+        }
+        List<ContextStore.SessionSummary> recent = agent.listResumableSessions(10);
+        if (arg.isEmpty()) {
+            if (recent.isEmpty()) {
+                printLines(reader, List.of("SQLite 中暂无可恢复的历史会话。"));
+                return;
+            }
+            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("MM-dd HH:mm")
+                    .withZone(java.time.ZoneId.systemDefault());
+            List<String> lines = new java.util.ArrayList<>();
+            lines.add("╭ 可恢复的历史会话（SQLite .jotaro/jotaro.db）");
+            for (int i = 0; i < recent.size(); i++) {
+                ContextStore.SessionSummary item = recent.get(i);
+                String shortId = item.sessionId().length() > 8 ? item.sessionId().substring(0, 8) : item.sessionId();
+                String time = fmt.format(java.time.Instant.ofEpochMilli(item.updatedAt()));
+                lines.add("│ [" + (i + 1) + "] " + shortId + "  " + time + "  (" + item.eventCount() + " 条事件)  " + item.title());
+            }
+            lines.add("╰ 用法: /resume <序号> 或 /resume <会话ID前缀>");
+            printLines(reader, lines);
+            return;
+        }
+
+        String target = arg;
+        if (arg.matches("\\d+")) {
+            int idx = Integer.parseInt(arg) - 1;
+            if (idx < 0 || idx >= recent.size()) {
+                printLines(reader, List.of("序号超出范围，请输入 1 到 " + recent.size() + " 之间的数字。"));
+                return;
+            }
+            target = recent.get(idx).sessionId();
+        }
+        try {
+            ContextManager.ContextSnapshot snap = agent.resume(target);
+            String shortId = snap.sessionId().length() > 8 ? snap.sessionId().substring(0, 8) : snap.sessionId();
+            printLines(reader, List.of("已恢复历史会话 [" + shortId + "]：原始事件 " + snap.rawEventCount()
+                    + " 条，活跃消息 " + snap.activeMessageCount() + " 条，当前 Token 估算 "
+                    + snap.estimatedTokens() + " / " + snap.modelContextLimit()));
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            printLines(reader, List.of("恢复失败: " + exception.getMessage()));
+        }
     }
 
     /**

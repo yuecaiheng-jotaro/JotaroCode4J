@@ -53,7 +53,7 @@ public class JotaroAgent {
 
     /**
      * 会话级系统提示词（包含基础角色设定、技能列表提示、MCP 提示及知识库提示）。
-     * 在构造和 {@link #reset()} 时作为首条 {@link SystemMessage} 放入消息历史。
+     * 在构造、{@link #reset()} 和 {@link #startNew()} 时作为首条 {@link SystemMessage} 放入消息历史。
      */
     private final String systemPrompt;
 
@@ -428,6 +428,30 @@ public class JotaroAgent {
     }
 
     /**
+     * 开启一个全新会话：当前会话的历史保留在存储中（可用 {@code /resume} 恢复），
+     * 内存消息切换为仅含系统提示词的新会话。
+     *
+     * @return 新会话的上下文洞察快照
+     * @throws IllegalStateException 如果当前正在运行中
+     */
+    public ContextManager.ContextSnapshot startNew() {
+        synchronized (runLock) {
+            if (running) {
+                throw new IllegalStateException("Agent 正在运行，不能创建新会话");
+            }
+            contextManager.startNew(systemPrompt);
+            messages.clear();
+            if (StringUtils.hasText(systemPrompt)) {
+                messages.add(new SystemMessage(systemPrompt));
+            }
+            steeringQueue.clear();
+            followUpQueue.clear();
+            state = AgentState.IDLE;
+            return contextManager.inspect(model);
+        }
+    }
+
+    /**
      * 设置或更新当前会话的任务目标（Goal 锚定，持久化到 Redis 事件日志）。
      */
     public void setGoal(String goal) {
@@ -439,6 +463,35 @@ public class JotaroAgent {
      */
     public ContextManager.ContextSnapshot inspectContext() {
         return contextManager.inspect(model);
+    }
+
+    /**
+     * 列出 SQLite 中可恢复的历史会话列表。
+     */
+    public List<ContextStore.SessionSummary> listResumableSessions(int limit) {
+        return contextManager.listResumableSessions(limit);
+    }
+
+    /**
+     * 从 SQLite / Redis 恢复指定历史会话的完整上下文。
+     *
+     * @param targetSessionId 目标会话 ID 或唯一前缀
+     * @return 恢复后的上下文洞察快照
+     * @throws IllegalStateException 如果当前 Agent 正在运行中
+     */
+    public ContextManager.ContextSnapshot resume(String targetSessionId) {
+        synchronized (runLock) {
+            if (running) {
+                throw new IllegalStateException("Agent 正在运行，不能恢复历史会话");
+            }
+            ContextManager.ContextSnapshot snapshot = contextManager.resume(targetSessionId, model);
+            messages.clear();
+            messages.addAll(contextManager.activeMessages());
+            steeringQueue.clear();
+            followUpQueue.clear();
+            state = AgentState.IDLE;
+            return snapshot;
+        }
     }
 
     /**

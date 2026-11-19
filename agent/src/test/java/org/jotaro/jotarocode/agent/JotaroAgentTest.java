@@ -1,5 +1,6 @@
 package org.jotaro.jotarocode.agent;
 
+import org.jotaro.jotarocode.agent.context.ContextManager;
 import org.jotaro.jotarocode.agent.runtime.AgentTool;
 import org.jotaro.jotarocode.agent.runtime.AssistantTurn;
 import org.jotaro.jotarocode.agent.runtime.StopReason;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 用假的模型流检查：空闲 prompt、运行中 steering、follow-up、中止和重置。 */
@@ -102,6 +104,25 @@ class JotaroAgentTest {
         assertEquals("请看附图。", user.getText());
         assertEquals(1, user.getMedia().size());
         assertEquals(Media.Format.IMAGE_PNG, user.getMedia().get(0).getMimeType());
+    }
+
+    @Test
+    void startNewLeavesThePreviousConversationResumable() {
+        JotaroAgent agent = agent((messages, tools, systemPrompt, control, onTextDelta) ->
+                AssistantTurn.of(new AssistantMessage("旧回复"), StopReason.STOP));
+        agent.prompt("旧问题");
+        String previous = agent.inspectContext().sessionId();
+
+        ContextManager.ContextSnapshot created = agent.startNew();
+
+        assertNotEquals(previous, created.sessionId());
+        assertEquals(1, agent.getMessages().size());
+        assertEquals("system", agent.getMessages().get(0).getText());
+
+        ContextManager.ContextSnapshot resumed = agent.resume(previous);
+        assertEquals(previous, resumed.sessionId());
+        assertEquals("旧问题", ((UserMessage) agent.getMessages().get(1)).getText());
+        assertEquals("旧回复", agent.getMessages().get(2).getText());
     }
 
     private static JotaroAgent agent(org.jotaro.jotarocode.agent.runtime.AssistantStreamer streamer) {
