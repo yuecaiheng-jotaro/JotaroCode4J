@@ -6,7 +6,8 @@ agent/src/main/resources/application-local.yaml
 .cursor
 agent/target
 rag/target
-.jotaro/*.db
-.jotaro/*.db-journal
-.jotaro/*.db-wal
-.jotaro/*.db-shm
+# 本地会话库与 SQLite 旁路文件，任何目录下都不要提交
+**/.jotaro/*.db
+**/.jotaro/*.db-journal
+**/.jotaro/*.db-wal
+**/.jotaro/*.db-shm
