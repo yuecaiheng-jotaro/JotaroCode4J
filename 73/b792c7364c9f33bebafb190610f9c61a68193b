@@ -1,0 +1,39 @@
+agent/src/main/java/org/jotaro/jotarocode/tui/JotaroAgentTui.java
+  s_e3a737b2410f96::t_c1c39f947fca9c 340-354
+  s_e3a737b2410f96::t_e34f0e5890b4e3 290
+agent/src/main/java/org/jotaro/jotarocode/agent/JotaroAgent.java
+  s_e3a737b2410f96::t_c426c9e8af7e48 431-453
+  s_e3a737b2410f96::t_1a7e1219fdefab 56
+agent/src/test/java/org/jotaro/jotarocode/agent/JotaroAgentTest.java
+  s_e3a737b2410f96::t_54bcbb95b6c4b6 3
+  s_e3a737b2410f96::t_8eabf98429c851 109-127
+  s_e3a737b2410f96::t_9a0f51b02bd129 21
+README.md
+  s_e3a737b2410f96::t_865ffabcc11ff3 130
+agent/src/main/java/org/jotaro/jotarocode/agent/context/ContextManager.java
+  s_e3a737b2410f96::t_29ad50caca2373 81,91-103
+agent/src/test/java/org/jotaro/jotarocode/tui/SlashCommandCompleterTest.java
+  s_e3a737b2410f96::t_f50c823aa1ceda 22
+agent/src/main/java/org/jotaro/jotarocode/tui/SlashCommandCompleter.java
+  s_e3a737b2410f96::t_2c74594c3d4d1b 32
+agent/src/test/java/org/jotaro/jotarocode/agent/context/ContextManagerTest.java
+  s_e3a737b2410f96::t_547aa60425b956 21
+  s_e3a737b2410f96::t_b8a4cd69aecbfd 140-150,152-161
+  s_e3a737b2410f96::t_03393adca16ef9 151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "73b792c7364c9f33bebafb190610f9c61a68193b",
+  "prompts": {},
+  "sessions": {
+    "s_e3a737b2410f96": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "19be4902-5135-45d5-bc7d-d751a7966109",
+        "model": "grok-4.7"
+      },
+      "human_author": "yuecaiheng.jotaro <yuecaiheng.jotaro@jd.com>"
+    }
+  }
+}
